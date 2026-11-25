@@ -36,6 +36,21 @@ public sealed class WorkspaceHostTests
     }
 
     [Fact]
+    public void HtmlEditorModeMountsTheDedicatedView()
+    {
+        using var app = new TestApp();
+        var node = PageNode.CreateWithAttrs("html", "html-block", "<p>Custom</p>",
+            new Dictionary<string, string>());
+        app.Project.HomePage!.Nodes.Add(node);
+        app.Project.SavePage(app.Project.HomePage);
+        app.Session.OpenHtmlEditor(node);
+
+        var page = app.Render<WorkspaceHost>();
+
+        Assert.NotNull(page.Find(".html-editor-workspace"));
+        Assert.Equal("webview", page.Find(".html-preview-frame").Tag);
+    }
+    [Fact]
     public void ClosingEveryTabShowsTheEmptyWorkspaceAndReopensAMode()
     {
         using var app = new TestApp();
@@ -54,3 +69,4 @@ public sealed class WorkspaceHostTests
         Assert.Single(app.Session.Tabs);
     }
 }
+

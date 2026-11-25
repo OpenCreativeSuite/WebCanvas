@@ -1,10 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="../../UI Framework/CSS-Engine/Donkeh/Build/Donkeh.props" />
 
   <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
     <DonkehDesktop>true</DonkehDesktop>
-    <TargetFrameworks>$(DonkehTargetFrameworks)</TargetFrameworks>
-    <DonkehVersion>1.0.48</DonkehVersion>
+    <DonkehVersion>1.0.55</DonkehVersion>
     <OutputType>Exe</OutputType>
     <RootNamespace>WebCanvasDotNet</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -38,5 +37,8 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="OpenCreativeSuite.Components.Files" Version="1.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Donkeh.Windowing" Version="$(DonkehVersion)" />
   </ItemGroup>
 </Project>

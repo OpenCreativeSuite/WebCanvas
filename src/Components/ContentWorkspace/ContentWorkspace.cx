@@ -266,9 +266,15 @@ public sealed class ContentWorkspace : Component
         switch (field.Type)
         {
             case FieldTypes.LongText:
+                return Ui.Field(label,
+                    Ui.TextArea(session, value, text => session.SetEntityValue(schema, entity, field.Name, text), "Write here…", rows: 4),
+                    hint);
+
             case FieldTypes.RichText:
                 return Ui.Field(label,
-                    Ui.TextArea(session, value, text => session.SetEntityValue(schema, entity, field.Name, text), "Write here…", rows: field.Type == FieldTypes.RichText ? 8 : 4),
+                    <RichTextEditor Key={entity.Id + ":" + field.Name}
+                        Value={value}
+                        OnChange={html => session.SetEntityValue(schema, entity, field.Name, html)} />,
                     hint);
 
             case FieldTypes.Boolean:

@@ -258,6 +258,55 @@ public static class SiteRenderer
             props = WithDropHandlers(props, node, edit);
         }
 
+        // Custom HTML is opaque to the native canvas. Reserve its measured box
+        // and show a selectable placeholder; the publisher emits the real HTML.
+        if (node.Tag.Equals("html", StringComparison.OrdinalIgnoreCase))
+        {
+            classes.Add("wc-html-block");
+            int width = StudioSession.HtmlBlockWidth(node);
+            int height = StudioSession.HtmlBlockHeight(node);
+            var style = new List<string>();
+
+            if (width > 0)
+            {
+                style.Add("width:" + width + "px");
+                style.Add("max-width:100%");
+            }
+
+            style.Add("min-height:" + (height > 0 ? height : 160) + "px");
+
+            if (attrs.TryGetValue("style", out string? existingStyle) && existingStyle.Length > 0)
+            {
+                style.Insert(0, existingStyle);
+            }
+
+            attrs.Remove("css");
+            attrs.Remove("width");
+            attrs.Remove("height");
+            attrs["style"] = string.Join(";", style);
+
+            var htmlProps = new Props
+            {
+                ClassName = string.Join(' ', classes),
+                Key = node.Id,
+                Attributes = attrs,
+                OnClickEvent = edit.Editing ? click =>
+                {
+                    click.StopPropagation();
+                    edit.Select?.Invoke(node.Id);
+                } : null,
+            };
+
+            if (edit.Editing)
+            {
+                htmlProps = WithDropHandlers(htmlProps, node, edit);
+            }
+
+            return Div(htmlProps,
+                Span(new Props { ClassName = "wc-html-label" }, Text("HTML block")),
+                Span(new Props { ClassName = "wc-html-snippet" }, Text("Custom markup and CSS")));
+        }
+
         // Embeds are opaque in a browser; the design canvas shows a selectable
         // preview card while the publisher emits the real iframe.
         if (node.Tag.Equals("iframe", StringComparison.OrdinalIgnoreCase))

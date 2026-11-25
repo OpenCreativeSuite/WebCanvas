@@ -38,5 +38,8 @@
 [assembly: Donkeh.UILab.Stylesheet("src/Components/WidgetPalette/WidgetPalette.css")]
 [assembly: Donkeh.UILab.Stylesheet("src/Components/WorkspaceHost/WorkspaceHost.css")]
 [assembly: Donkeh.UILab.Stylesheet("src/Components/WorkTabs/WorkTabs.css")]
+[assembly: Donkeh.UILab.Stylesheet("src/Components/HtmlEditorWorkspace/HtmlEditorWorkspace.css")]
+[assembly: Donkeh.UILab.Stylesheet("src/Components/RichTextEditor/RichTextEditor.css")]
 [assembly: Donkeh.UILab.Stylesheet("src/Components/Icons/Icons.css")]
 [assembly: Donkeh.UILab.Stylesheet("src/Styles/Overrides.css")]
+

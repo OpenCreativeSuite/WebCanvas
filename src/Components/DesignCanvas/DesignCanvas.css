@@ -253,3 +253,35 @@
     color: var(--accent);
 }
 
+
+/* Custom HTML block placeholder inside the editor canvas. */
+.wc-canvas .wc-html-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 28px;
+    border: 1px dashed var(--site-border);
+    border-radius: var(--site-radius);
+    background-color: #101418;
+    color: #d8dee7;
+    text-align: center;
+}
+
+.wc-canvas .wc-html-label {
+    padding: 3px 9px;
+    border-radius: 10px;
+    background-color: var(--site-accent);
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.wc-canvas .wc-html-snippet {
+    color: #97a1ad;
+    font-size: 10.5px;
+}

@@ -70,7 +70,7 @@ public sealed class App : Component
             {Show(session.HasProject,
                 <div className="shell">
                     <ActivityRail />
-                    {Show(session.ShowSidebar && session.ActiveMode != StudioMode.Preview, <ContextSidebar />)}
+                    {Show(session.ShowSidebar && session.ActiveMode is not (StudioMode.Preview or StudioMode.Html), <ContextSidebar />)}
                     <WorkspaceHost />
                     {Show(showInspector,
                         <div className="inspector-host">

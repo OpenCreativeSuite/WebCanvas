@@ -5,10 +5,15 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 3px;
+    min-height: 21px;
     margin-top: 6px;
+    flex-shrink: 0;
 }
 
 .filter-chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     height: 21px;
     padding: 0 8px;
     border: 1px solid var(--line);
@@ -16,6 +21,7 @@
     background-color: var(--bg-panel);
     color: var(--text-muted);
     font-size: 9px;
+    line-height: 1;
 }
 
 .app button.filter-chip:enabled:hover {
@@ -137,4 +143,5 @@
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
 

@@ -49,6 +49,29 @@ public sealed class DesignCanvasTests
     }
 
     [Fact]
+    public void CustomHtmlBlockReservesItsMeasuredBox()
+    {
+        using var app = new TestApp();
+        var node = PageNode.CreateWithAttrs("html", "html-block", "<div>Custom</div>",
+            new Dictionary<string, string>
+            {
+                ["css"] = ".nothing { color: red; }",
+                ["width"] = "512",
+                ["height"] = "180",
+            });
+        app.Project.HomePage!.Nodes.Add(node);
+        app.Project.SavePage(app.Project.HomePage);
+        app.Session.SelectNode(node.Id);
+
+        var page = app.Render<DesignCanvas>();
+        var block = page.Find(".wc-html-block");
+
+        Assert.Contains("width:512px", block.GetAttribute("style"));
+        Assert.Contains("min-height:180px", block.GetAttribute("style"));
+        Assert.Contains("HTML block", block.InnerText);
+        Assert.True(block.HasClass("is-selected"));
+    }
+    [Fact]
     public void DragStartsTheBannerWithTheWidgetLabel()
     {
         using var app = new TestApp();
@@ -62,3 +85,5 @@ public sealed class DesignCanvasTests
         Assert.Empty(page.FindAll(".canvas-drag-banner"));
     }
 }
+
+

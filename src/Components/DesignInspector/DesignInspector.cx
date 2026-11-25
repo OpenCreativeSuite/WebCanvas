@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Donkeh.UILab;
 using WebCanvasDotNet.Core;
 using static Donkeh.UILab._;
@@ -64,7 +64,7 @@ public sealed class DesignInspector : Component
                         <div className="node-summary-icon">{Ui.Icon(block.Kind == "theme" ? Icons.Palette : Icons.Cube)}</div>
                         <div className="node-summary-copy">
                             <div className="node-summary-title">{Text(block.Name)}</div>
-                            <div className="node-summary-sub">{Text((block.Kind == "theme" ? "Theme" : "Content") + " · " + block.Category)}</div>
+                            <div className="node-summary-sub">{Text((block.Kind == "theme" ? "Theme" : "Content") + " Â· " + block.Category)}</div>
                         </div>
                     </div>
                     <div className="inline-actions">
@@ -96,7 +96,7 @@ public sealed class DesignInspector : Component
                             <span className="field-hint">{Text("Theme blocks are header, footer and layout chrome. Content blocks are the material inside pages.")}</span>
                         </div>
                         {Ui.Field("Category",
-                            Ui.Input(session, block.Category, value => session.SetBlockMeta(block, target => target.Category = value), "Hero, Section, Call to action…", live: true))}
+                            Ui.Input(session, block.Category, value => session.SetBlockMeta(block, target => target.Category = value), "Hero, Section, Call to actionâ€¦", live: true))}
                     </div>,
                     subtitle: "Reusable")}
 
@@ -130,7 +130,7 @@ public sealed class DesignInspector : Component
                         <div className="node-summary-icon">{Ui.Icon(Icons.Cube)}</div>
                         <div className="node-summary-copy">
                             <div className="node-summary-title">{Text(block?.Name ?? "Missing block")}</div>
-                            <div className="node-summary-sub">{Text(block is null ? "The referenced block no longer exists." : (block.Kind == "theme" ? "Theme" : "Content") + " · " + block.Category)}</div>
+                            <div className="node-summary-sub">{Text(block is null ? "The referenced block no longer exists." : (block.Kind == "theme" ? "Theme" : "Content") + " Â· " + block.Category)}</div>
                         </div>
                     </div>
                     <div className="inline-actions">
@@ -241,6 +241,7 @@ public sealed class DesignInspector : Component
             or "blockquote" or "cite" or "label" or "strong" or "em" or "small" or "code" or "pre";
         bool isImage = node.Tag == "img";
         bool isEmbed = node.Tag is "iframe" or "video";
+        bool isHtml = node.Tag == "html";
         bool isCollection = node.Tag == "collection";
         bool isLink = node.Tag is "a" or "button";
 
@@ -268,11 +269,11 @@ public sealed class DesignInspector : Component
                     </div>
                 </div>
 
-                {Ui.Section(session, "node-content", "Content",
+                {Show(!isHtml, Ui.Section(session, "node-content", "Content",
                     <div>
                         {Show(textNode,
                             Ui.Field("Text",
-                                Ui.TextArea(session, node.Text ?? "", session.SetNodeText, "Write the text…", rows: 5, live: true)))}
+                                Ui.TextArea(session, node.Text ?? "", session.SetNodeText, "Write the textâ€¦", rows: 5, live: true)))}
 
                         {Show(isImage,
                             <div>
@@ -310,9 +311,22 @@ public sealed class DesignInspector : Component
                                 <div className="inspector-hint">{Text("Records are ordered automatically and published with the page.")}</div>
                             </div>)}
 
-                        {Show(!textNode && !isImage && !isEmbed && !isLink && !isCollection,
+                        {Show(!textNode && !isImage && !isEmbed && !isLink && !isCollection && !isHtml,
                             <div className="inspector-hint">{Text("This block is a container. Add a heading, text or another block inside it.")}</div>)}
-                    </div>)}
+                    </div>))}
+
+                {Show(isHtml,
+                    Ui.Section(session, "node-html", "HTML block",
+                        <div>
+                            <div className="inspector-hint">
+                                {Text("This block renders custom HTML and CSS. Open the dedicated editor to change the markup, styles and reserved size.")}
+                            </div>
+                            {Ui.Meta("Reserved",
+                                StudioSession.HtmlBlockWidth(node) > 0
+                                    ? StudioSession.HtmlBlockWidth(node) + " x " + StudioSession.HtmlBlockHeight(node) + " px"
+                                    : "Measured when opened")}
+                            {Ui.Button("Open HTML editor", () => session.OpenHtmlEditor(node), "secondary", Icons.Development, small: true)}
+                        </div>))}
 
                 {Show(node.HasChildren,
                     Ui.Section(session, "node-children", "Inside",
@@ -544,3 +558,5 @@ public sealed class DesignInspector : Component
         return node.DisplayName();
     }
 }
+
+

@@ -81,6 +81,45 @@ public sealed class StaticSiteBuilderTests
     }
 
     [Fact]
+    public void CustomHtmlBlocksPublishRawMarkupCssAndReservedHeight()
+    {
+        using var app = new TestApp();
+        app.Project.HomePage!.Nodes.Add(PageNode.CreateWithAttrs("html", "html-block",
+            "<div class=\"custom\">Hi <strong>there</strong></div>",
+            new Dictionary<string, string>
+            {
+                ["css"] = ".custom { color: red; }",
+                ["height"] = "180",
+            }));
+        app.Project.SavePage(app.Project.HomePage);
+
+        var result = StaticSiteBuilder.Build(app.Project, new BuildOptions());
+        string html = File.ReadAllText(Path.Combine(result.OutputPath, "index.html"));
+
+        Assert.Contains("<style>.custom { color: red; }</style>", html);
+        Assert.Contains("<div class=\"custom\">Hi <strong>there</strong></div>", html);
+        Assert.Contains("min-height:180px", html);
+        Assert.DoesNotContain("&lt;strong", html);
+    }
+
+    [Fact]
+    public void RichTextTokensPublishAsRawHtml()
+    {
+        using var app = new TestApp();
+        var schema = app.AddSchema("Article");
+        var detail = app.AddPage("Article detail",
+            PageNode.Create("div", "article-body", "{{body}}"));
+        schema.DetailPageId = detail.Id;
+        app.Project.SaveSchema(schema);
+        app.AddEntity(schema, ("title", "Story"), ("slug", "story"), ("body", "<p>Rich <strong>body</strong></p>"));
+
+        var result = StaticSiteBuilder.Build(app.Project, new BuildOptions());
+        string html = File.ReadAllText(Path.Combine(result.OutputPath, "articles", "story", "index.html"));
+
+        Assert.Contains("<div class=\"article-body\"><p>Rich <strong>body</strong></p></div>", html);
+        Assert.DoesNotContain("&lt;strong", html);
+    }
+    [Fact]
     public void CurrentBaseCssAndIframeDefaultsReachThePublishedSite()
     {
         using var app = new TestApp();
@@ -101,4 +140,5 @@ public sealed class StaticSiteBuilderTests
         Assert.Contains("aspect-ratio: 16 / 9", css);
     }
 }
+
 

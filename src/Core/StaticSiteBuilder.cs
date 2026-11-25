@@ -374,6 +374,12 @@ public static class StaticSiteBuilder
             return;
         }
 
+        if (node.Tag.Equals("html", StringComparison.OrdinalIgnoreCase))
+        {
+            RenderHtmlBlock(html, node);
+            return;
+        }
+
         var classes = new List<string>();
 
         if (!string.IsNullOrWhiteSpace(node.ClassName))
@@ -475,7 +481,14 @@ public static class StaticSiteBuilder
 
         if (!string.IsNullOrWhiteSpace(node.Text))
         {
-            html.Append(WebUtility.HtmlEncode(ResolveTokens(node.Text, project, schema, entity)));
+            if (TryResolveRichToken(node.Text, project, schema, entity, out string richHtml))
+            {
+                html.Append(richHtml);
+            }
+            else
+            {
+                html.Append(WebUtility.HtmlEncode(ResolveTokens(node.Text, project, schema, entity)));
+            }
         }
 
         if (node.Children is not null)
@@ -525,8 +538,39 @@ public static class StaticSiteBuilder
         html.Append("</").Append(tag).Append('>');
     }
 
-    private static void RenderCollection(
-        StringBuilder html,
+    /// <summary>Writes a custom HTML block with its scoped stylesheet.</summary>
+    private static void RenderHtmlBlock(StringBuilder html, PageNode node)
+    {
+        string css = node.Attrs is not null && node.Attrs.TryGetValue("css", out string? styles) ? styles : "";
+
+        if (!string.IsNullOrWhiteSpace(css))
+        {
+            html.Append("<style>").Append(css).Append("</style>");
+        }
+
+        var style = new List<string> { "max-width:100%" };
+
+        if (node.Attrs is not null
+            && node.Attrs.TryGetValue("height", out string? height)
+            && int.TryParse(height, out int reserved)
+            && reserved > 0)
+        {
+            style.Add("min-height:" + reserved + "px");
+        }
+
+        html.Append("<div class=\"wc-html-block");
+
+        if (!string.IsNullOrWhiteSpace(node.ClassName))
+        {
+            html.Append(' ').Append(WebUtility.HtmlEncode(node.ClassName));
+        }
+
+        html.Append("\" style=\"").Append(WebUtility.HtmlEncode(string.Join(';', style))).Append("\">")
+            .Append(node.Text ?? "")
+            .Append("</div>");
+    }
+
+    private static void RenderCollection(        StringBuilder html,
         PageNode node,
         WcProject project,
         PageDoc page,
@@ -969,9 +1013,45 @@ public static class StaticSiteBuilder
         log.Add("Wrote runtime.js");
     }
 
+    /// <summary>
+    /// A text node that is exactly one rich-text token is raw HTML, not text.
+    /// This lets detail pages render rich-text fields without escaping.
+    /// </summary>
+    private static bool TryResolveRichToken(
+        string text,
+        WcProject project,
+        DataSchema? schema,
+        EntityDoc? entity,
+        out string html)
+    {
+        html = "";
+
+        if (schema is null || entity is null)
+        {
+            return false;
+        }
+
+        string trimmed = text.Trim();
+
+        if (!trimmed.StartsWith("{{", StringComparison.Ordinal)
+            || !trimmed.EndsWith("}}", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        string token = trimmed[2..^2].Trim();
+
+        if (schema.Field(token) is not { Type: FieldTypes.RichText } field)
+        {
+            return false;
+        }
+
+        html = entity.Get(field.Name);
+        return true;
+    }
+
     /// <summary>Replaces <c>{{field}}</c> tokens with values from the current record.</summary>
-    private static string ResolveTokens(
-        string value,
+    private static string ResolveTokens(        string value,
         WcProject project,
         DataSchema? schema,
         EntityDoc? entity)

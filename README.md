@@ -1,4 +1,4 @@
-# WebCanvasDotNet
+﻿# WebCanvasDotNet
 
 A desktop static-site CMS and visual website builder built with **Donkeh UI + CSX**.
 It combines content management, page design, data modelling, automation, development
@@ -81,17 +81,18 @@ release with those zip/tar archives. Pushing a tag directly uses that tag instea
 The mode rail opens VS Code-style tabs. Tabs remember the area and item they point
 at, can be closed, and are restored by clicking the matching sidebar entry.
 
-- **Content** — the default relationship map shows how data types connect. Click a
+- **Content** â€” the default relationship map shows how data types connect. Click a
   type for a searchable, filterable collection with a focused editor, required-field
   validation, relationships, duplicate/delete and CRUD.
-- **Design** — pages are nested trees plus an Elementor-style widget palette. Drag
+- **Design** â€” pages are nested trees plus an Elementor-style widget palette. Drag
   a widget onto the canvas and a browser-style drag image follows the pointer. The
   nearest valid drop site outlines itself and shows an insertion line before the
   widget is released; clicking adds inside the current selection. The palette
   includes hero, grid, image-with-text, image-with-title, subtitle, buttons, stats,
   FAQ, cards, collections, text links, code blocks and YouTube/generic embeds.
   Every page is a JSON tree; the canvas and the published site are both rendered
-  from that same tree. **Preview** builds the site first, then opens the compiled
+  from that same tree. **HTML block** renders your own HTML and CSS; its dedicated
+  editor includes live preview and measures the block to reserve its canvas space. **Preview** builds the site first, then opens the compiled
   page in a new work tab rendered by Donkeh's embedded Chromium `webview`. Previews
   are served from a local HTTP origin so YouTube and other embeds receive the
   referrer they require.
@@ -101,14 +102,14 @@ at, can be closed, and are restored by clicking the matching sidebar entry.
   three-column, newsletter and more) to the current block or as a new block.
   Blocks can contain other blocks (cycles are rejected). Drag any block from the
   sidebar into a page or another block.
-- **Data** — types, fields, relationship explorer, public JSON preference, and a
+- **Data** â€” types, fields, relationship explorer, public JSON preference, and a
   one-click **Show on site** action that adds a collection for a type to a page.
   Each type can also nominate a **detail page**; records then publish at
   `/<plural>/<slug>` (or `/<plural>/<id>` when there is no slug field) and the
   page content can use `{{title}}`, `{{slug}}` and `{{field}}` tokens.
-- **Automation** — event browser, a visual event → handler → action map, ordered
+- **Automation** â€” event browser, a visual event â†’ handler â†’ action map, ordered
   conditions/actions, enable/pause and a diagnostic test log.
-- **Development** — project overview and health, live theme editor with theme
+- **Development** â€” project overview and health, live theme editor with theme
   blocks, plugin discovery, generated API catalogue and the static build console.
 
 The startup project hub offers Create, Open folder, recent projects and a complete
@@ -180,7 +181,7 @@ references a block inherits edits to it. Types marked **Publish JSON** off are
 omitted from `data/` and the generated API routes; a collection already placed on a
 page still renders its records.
 
-A page assigned as a type’s detail page is a route template: it is not published at
+A page assigned as a typeâ€™s detail page is a route template: it is not published at
 its own address, and the builder writes one HTML page per record. Collection cards
 link to those record pages automatically, and the sitemap and search index include
 them. The detail page can be deleted only after the type is pointed elsewhere, so
@@ -188,7 +189,7 @@ records never lose their route.
 
 ## Architecture
 
-- `src/Components/**/*.cx` — every application view is authored in **CSX** with
+- `src/Components/**/*.cx` â€” every application view is authored in **CSX** with
   literal `<div>`, `<button>`, `<input>`, `<select>` markup. UI helpers in
   `src/Components/Ui/Ui.cx` are also CSX markup; there is no hand-written element
   builder API in the UI layer.
@@ -196,13 +197,13 @@ records never lose their route.
   and `{Name}.md`. The markdown file explains the component and how it connects to
   `StudioSession`. Shared control primitives are in `Ui`, while app-wide layout,
   tokens and late overrides stay in `src/Styles`.
-- `src/Core/*.cs` — project model, disk I/O, starter content, static publisher,
+- `src/Core/*.cs` â€” project model, disk I/O, starter content, static publisher,
   studio state, and the single mutable `StudioSession`.
-- `src/Styles/*.css` — tokens (light and dark), shell, workspace layouts and design
+- `src/Styles/*.css` â€” tokens (light and dark), shell, workspace layouts and design
   canvas styles. Embedded through `src/Stylesheets.cs`.
-- `SiteBlocks.cs` — the shared site stylesheet used by the design canvas and the
+- `SiteBlocks.cs` â€” the shared site stylesheet used by the design canvas and the
   generated static site, so what you design is what you publish.
-- `AssemblyBridge.cs` — resolves the component package's Donkeh.UILab reference to
+- `AssemblyBridge.cs` â€” resolves the component package's Donkeh.UILab reference to
   the local framework checkout used by this repository.
 
 State lives in `StudioSession`; components read it during render and call methods
@@ -227,7 +228,7 @@ workspace, and an inspector that appears only for Design and Data. Panels collap
 from their headers or with `Ctrl+B` / `Ctrl+Shift+I`.
 
 Interface text is scaled to **115%** by default so it remains readable on modern
-high-density displays. Development → Overview → Accessibility offers Default,
+high-density displays. Development â†’ Overview â†’ Accessibility offers Default,
 Comfortable and Large (100/115/130%), and the same options are in the command
 palette. Blocks are explicitly categorised as **Theme** or **Content**, which lets a
 theme be tested against header/footer chrome and page material separately.
@@ -237,7 +238,7 @@ theme be tested against header/footer chrome and page material separately.
 ```
 Ctrl+K / Ctrl+P / F1   Command palette
 Ctrl+O                 Open a project folder
-Ctrl+1 … Ctrl+6        Content / Design / Blocks / Data / Automation / Development
+Ctrl+1 â€¦ Ctrl+6        Content / Design / Blocks / Data / Automation / Development
 Ctrl+B                 Toggle sidebar
 Ctrl+Shift+I           Toggle inspector
 Ctrl+Shift+B           Build site
@@ -251,3 +252,5 @@ Ctrl+S                 Save everything
 Ctrl+W                 Close tab
 Esc                    Close overlay / clear selection
 ```
+
+

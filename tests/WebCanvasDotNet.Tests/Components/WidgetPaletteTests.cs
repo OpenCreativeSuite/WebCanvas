@@ -15,6 +15,7 @@ public sealed class WidgetPaletteTests
         Assert.Contains("Saved blocks", page.FindAll(".widgets-group-head").Select(head => head.InnerText));
         Assert.Equal(StudioSession.Presets.Length + app.Project.Blocks.Count, page.FindAll(".widget-row").Count);
         Assert.Equal(app.Project.Blocks.Count, page.FindAll(".widget-row.is-block").Count);
+        Assert.Contains("HTML block", page.FindAll(".widget-label").Select(label => label.InnerText));
     }
 
     [Fact]
@@ -32,6 +33,20 @@ public sealed class WidgetPaletteTests
         Assert.Equal("No widgets match “zzz-nothing”.", page.Find(".widgets-empty").InnerText);
     }
 
+    [Fact]
+    public void HtmlBlockPresetAddsACustomHtmlNode()
+    {
+        using var app = new TestApp();
+        app.Session.SetWidgetSearch("HTML block");
+        var page = app.Render<WidgetPalette, WidgetPaletteProps>(new WidgetPaletteProps());
+
+        page.Click(page.FindAll(".widget-row").First(row => row.GetAttribute("data-drag-label") == "HTML block"));
+
+        var node = Assert.Single(app.Project.HomePage!.Nodes, node => node.Tag == "html");
+        Assert.Contains("css", node.Attrs!.Keys);
+        Assert.Contains("<div", node.Text);
+        Assert.Equal(node.Id, app.Session.SelectedNodeId);
+    }
     [Fact]
     public void ClickingAWidgetAddsAndSelectsTheNode()
     {
@@ -56,3 +71,7 @@ public sealed class WidgetPaletteTests
         Assert.DoesNotContain("Saved blocks", page.FindAll(".widgets-group-head").Select(head => head.InnerText));
     }
 }
+
+
+
+

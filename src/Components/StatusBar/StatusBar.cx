@@ -17,6 +17,7 @@ public sealed class StatusBar : Component
             StudioMode.Blocks => session.IsEditingBlock ? session.CurrentBlock?.Name ?? "Blocks" : "Library",
             StudioMode.Data => session.CurrentSchema?.Name ?? "Data",
             StudioMode.Automation => StudioSession.EventLabel(session.SelectedEvent),
+            StudioMode.Html => "HTML block",
             _ => ModeInfo.DevLabel(session.DevSection),
         };
 

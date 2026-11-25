@@ -1,0 +1,179 @@
+﻿using System.Text;
+using System.Text.Json;
+using Donkeh.Hosting;
+using Donkeh.UILab;
+using Donkeh.Windowing;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>The dedicated editor for a custom HTML block.</summary>
+public sealed class HtmlEditorWorkspace : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        PageDoc? page = session.HtmlEditorPage;
+        PageNode? node = session.CurrentHtmlNode;
+
+        if (page is null || node is null)
+        {
+            return (
+                <div className="workspace html-editor-workspace">
+                    <div className="workspace-empty">
+                        {Ui.Empty(Icons.Development, "No HTML block selected", "Select an HTML block in Design and open its editor.")}
+                    </div>
+                </div>);
+        }
+
+        string html = node.Text ?? "";
+        string css = StudioSession.HtmlBlockCss(node);
+        int width = StudioSession.HtmlBlockWidth(node);
+        int height = StudioSession.HtmlBlockHeight(node);
+        string src = PreviewSource(html, css, session.HtmlPreviewRevision);
+        string backLabel = page.Id.StartsWith("block:", StringComparison.Ordinal) ? "Back to block" : "Back to page";
+
+        return (
+            <div className="workspace html-editor-workspace">
+                <div className="mode-bar html-editor-bar">
+                    <div className="mode-bar-title">
+                        {Ui.Icon(Icons.Development)}
+                        <span>{Text("HTML block")}</span>
+                    </div>
+                    <div className="mode-bar-crumb">
+                        {Ui.Icon(Icons.ChevronRight)}
+                        <span>{Text(page.Title)}</span>
+                    </div>
+                    <span className="preview-address mono">
+                        {Text(width > 0 && height > 0 ? "Reserved " + width + " x " + height + " px" : "Reserved size pending")}
+                    </span>
+                    <span className="flex-spacer" />
+                    <div className="mode-bar-actions">
+                        {Ui.Button("Save block", session.SaveHtmlBlock, "primary", Icons.Save, small: true)}
+                        {Ui.Button("Update preview", session.RefreshHtmlPreview, "secondary", Icons.Refresh, small: true)}
+                        {Ui.Button(backLabel, session.CloseHtmlEditor, "ghost", Icons.Back, small: true)}
+                    </div>
+                </div>
+
+                <div className="html-editor-body">
+                    <div className="html-editor-fields">
+                        <div className="html-editor-field">
+                            <div className="field-label-row">
+                                <span className="field-label">{Text("HTML")}</span>
+                                <span className="field-hint">{Text("Rendered as-is on the page.")}</span>
+                            </div>
+                            {Ui.TextArea(session, html, value => session.SetHtmlBlockHtml(value),
+                                "<div class=\"my-block\">\n  <h2>Custom HTML</h2>\n  <p>Anything you can write in HTML.</p>\n</div>",
+                                "html-code-input", rows: 16)}
+                        </div>
+
+                        <div className="html-editor-field">
+                            <div className="field-label-row">
+                                <span className="field-label">{Text("CSS")}</span>
+                                <span className="field-hint">{Text("Styles are published with the block.")}</span>
+                            </div>
+                            {Ui.TextArea(session, css, value => session.SetHtmlBlockCss(value),
+                                ".my-block {\n  padding: 24px;\n  border: 1px solid #d9d9d9;\n  border-radius: 12px;\n}",
+                                "html-code-input", rows: 12)}
+                        </div>
+
+                        <div className="html-editor-note">
+                            {Ui.Icon(Icons.Info)}
+                            <span>{Text("The preview measures the block and reserves its height in the page canvas.")}</span>
+                        </div>
+                    </div>
+
+                    <div className="html-editor-preview">
+                        <div className="html-preview-head">
+                            <span>{Text("Live block")}</span>
+                            <span className="mono">{Text(width > 0 ? width + " x " + height + " px" : "measuring...")}</span>
+                        </div>
+                        <div className="html-preview-stage">
+                            {HtmlPreview(src, session, node.Id)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    private static Node HtmlPreview(string src, StudioSession session, string nodeId) =>
+        H("webview", new WebViewProps
+        {
+            Src = src,
+            ClassName = "html-preview-frame",
+            OnReady = view => Measure(view, session, nodeId),
+        });
+
+    private static string PreviewSource(string html, string css, int revision)
+    {
+        string document = """
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+html, body { margin: 0; padding: 0; background: #ffffff; color: #1c2128; font-family: "Segoe UI", system-ui, sans-serif; }
+*, *::before, *::after { box-sizing: border-box; }
+img, video, iframe { max-width: 100%; }
+</style>
+<style>
+""" + css + """
+</style>
+</head>
+<body>
+""" + html + """
+</body>
+</html>
+""";
+
+        return "data:text/html;charset=utf-8," + Uri.EscapeDataString(document) + "#" + revision;
+    }
+
+    private static async void Measure(WebView view, StudioSession session, string nodeId)
+    {
+        try
+        {
+            await Task.Delay(250);
+
+            for (int i = 0; i < 120 && view.IsLoading; i++)
+            {
+                await Task.Delay(50);
+            }
+
+            await Task.Delay(120);
+
+            string? result = await view.EvaluateJavaScriptAsync(
+                "JSON.stringify({width: Math.ceil(document.body.getBoundingClientRect().width), height: Math.ceil(document.body.getBoundingClientRect().height)})");
+
+            if (string.IsNullOrWhiteSpace(result))
+            {
+                return;
+            }
+
+            using JsonDocument document = JsonDocument.Parse(result);
+
+            if (!document.RootElement.TryGetProperty("width", out JsonElement width)
+                || !document.RootElement.TryGetProperty("height", out JsonElement height))
+            {
+                return;
+            }
+
+            int w = width.GetInt32();
+            int h = height.GetInt32();
+
+            if (w > 0 && h > 0)
+            {
+                Host.Post(() => session.SetHtmlBlockSize(nodeId, w, h));
+            }
+        }
+        catch
+        {
+            // Measurement is best effort; the editor still works without a size.
+        }
+    }
+}
+
+
+

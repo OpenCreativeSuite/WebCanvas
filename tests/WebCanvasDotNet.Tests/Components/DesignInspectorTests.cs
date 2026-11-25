@@ -52,6 +52,24 @@ public sealed class DesignInspectorTests
     }
 
     [Fact]
+    public void HtmlNodeOffersTheDedicatedEditor()
+    {
+        using var app = new TestApp();
+        var node = PageNode.CreateWithAttrs("html", "html-block", "<p>Custom</p>",
+            new Dictionary<string, string>());
+        app.Project.HomePage!.Nodes.Add(node);
+        app.Project.SavePage(app.Project.HomePage);
+        app.Session.SelectNode(node.Id);
+        var page = app.Render<DesignInspector>();
+
+        Assert.Contains("HTML block", page.Find(".inspector-body").InnerText);
+
+        page.Click(page.FindByText("Open HTML editor"));
+
+        Assert.Equal(StudioMode.Html, app.Session.ActiveMode);
+        Assert.Single(app.Session.Tabs, tab => tab.Mode == StudioMode.Html);
+    }
+    [Fact]
     public void ContainerChildListSelectsTheClickedChild()
     {
         using var app = new TestApp();
@@ -70,4 +88,5 @@ public sealed class DesignInspectorTests
 
     private static TestElement FieldInput(ComponentTestHarness page, string label) => FieldControl(page, label);
 }
+
 

@@ -26,6 +26,7 @@ public sealed class WorkspaceHost : Component
                 {Show(session.ActiveMode == StudioMode.Automation, <AutomationWorkspace />)}
                 {Show(session.ActiveMode == StudioMode.Development, <DevelopmentWorkspace />)}
                 {Show(session.ActiveMode == StudioMode.Preview, <PreviewWorkspace />)}
+                {Show(session.ActiveMode == StudioMode.Html, <HtmlEditorWorkspace />)}
             </div>
         );
     }

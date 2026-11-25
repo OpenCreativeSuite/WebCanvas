@@ -58,6 +58,7 @@ public sealed partial class StudioSession
         new() { Id = "image", Label = "Image", Icon = "fa-image", Description = "A responsive image", Group = "Content" },
         new() { Id = "youtube", Label = "YouTube", Icon = "fa-play", Description = "A responsive video embed", Group = "Content" },
         new() { Id = "embed", Label = "Embed", Icon = "fa-globe", Description = "An embedded page or tool", Group = "Content" },
+        new() { Id = "html", Label = "HTML block", Icon = "fa-code", Description = "Your own HTML and CSS", Group = "Content" },
         new() { Id = "cards", Label = "Card row", Icon = "fa-copy", Description = "Two editable cards", Group = "Content" },
         new() { Id = "stats", Label = "Stat row", Icon = "fa-hashtag", Description = "Three numbers that matter", Group = "Content" },
         new() { Id = "logos", Label = "Logo row", Icon = "fa-star", Description = "A quiet trust strip", Group = "Content" },
@@ -1022,6 +1023,15 @@ public sealed partial class StudioSession
 
         "code" => PageNode.Create("pre", "code-block",
             "// A short code sample\nconst site = build({\n  pages: \"json\",\n  output: \"html\"\n});"),
+
+        "html" => PageNode.CreateWithAttrs("html", "html-block",
+            "<div class=\"custom-html\">\n  <h2>Custom HTML</h2>\n  <p>Write your own markup and style it with CSS.</p>\n</div>",
+            new Dictionary<string, string>
+            {
+                ["css"] = ".custom-html {\n  padding: 28px;\n  border: 1px solid #d9d9d9;\n  border-radius: 12px;\n}\n\n.custom-html h2 {\n  margin: 0 0 8px;\n}",
+                ["width"] = "640",
+                ["height"] = "160",
+            }),
 
         "youtube" => PageNode.CreateWithAttrs("iframe", "embed-video", null, new Dictionary<string, string>
         {

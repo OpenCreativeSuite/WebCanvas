@@ -13,6 +13,7 @@ public enum StudioMode
     Automation,
     Development,
     Preview,
+    Html,
 }
 
 public enum DevSection
@@ -40,6 +41,7 @@ public static class ModeInfo
         StudioMode.Data => "Data",
         StudioMode.Automation => "Automation",
         StudioMode.Preview => "Preview",
+        StudioMode.Html => "HTML",
         _ => "Development",
     };
 
@@ -51,6 +53,7 @@ public static class ModeInfo
         StudioMode.Data => "fa-database",
         StudioMode.Automation => "fa-bolt",
         StudioMode.Preview => "fa-eye",
+        StudioMode.Html => "fa-code",
         _ => "fa-code",
     };
 
@@ -64,6 +67,7 @@ public static class ModeInfo
         StudioMode.Data => "Model types and relationships",
         StudioMode.Automation => "React to events",
         StudioMode.Preview => "See the compiled page in a browser view",
+        StudioMode.Html => "Edit a custom HTML block",
         _ => "Theme, plugins, APIs and builds",
     };
 

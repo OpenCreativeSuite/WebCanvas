@@ -1,0 +1,142 @@
+/* Block-based WYSIWYG rich-text field. */
+
+.rich-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.rich-editor-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+
+.rich-editor-tool {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 23px;
+    padding: 0 8px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background-color: var(--bg-sunken);
+    color: var(--text-muted);
+    font-size: 9.5px;
+    line-height: 1;
+}
+
+.rich-editor-tool:hover {
+    border-color: var(--line-strong);
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.rich-editor-hint {
+    margin-left: auto;
+    color: var(--text-faint);
+    font-size: 9px;
+}
+
+.rich-editor-sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 14px 16px 18px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background-color: var(--bg-panel);
+    min-height: 180px;
+}
+
+.rich-editor-block {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 2px 0;
+}
+
+.rich-editor-tools {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    padding-top: 3px;
+    opacity: 0;
+    flex-shrink: 0;
+}
+
+.rich-editor-block:hover .rich-editor-tools,
+.rich-editor-block:focus-within .rich-editor-tools {
+    opacity: 1;
+}
+
+.rich-editor-tools .icon-btn {
+    width: 20px;
+    height: 20px;
+    font-size: 8px;
+}
+
+.rich-editor-input {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 3px 4px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background-color: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12.5px;
+    line-height: 1.65;
+    resize: none;
+}
+
+.rich-editor-input:hover {
+    border-color: var(--line-soft);
+}
+
+.rich-editor-input:focus {
+    border-color: var(--accent);
+    background-color: var(--bg-panel);
+    outline: none;
+}
+
+.rich-editor-input.is-h2 {
+    font-family: var(--site-font-heading, Georgia, serif);
+    font-size: 25px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+}
+
+.rich-editor-input.is-h3 {
+    font-family: var(--site-font-heading, Georgia, serif);
+    font-size: 18px;
+    font-weight: 650;
+    line-height: 1.3;
+}
+
+.rich-editor-input.is-quote {
+    padding-left: 12px;
+    border-left: 3px solid var(--accent);
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.rich-editor-input.is-list {
+    padding-left: 18px;
+    font-size: 12px;
+}
+
+.rich-editor-input.is-code {
+    padding: 10px 12px;
+    border-color: var(--line);
+    background-color: var(--bg-sunken);
+    color: var(--text-muted);
+    font-family: "Cascadia Code", Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.55;
+}

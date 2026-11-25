@@ -34,13 +34,35 @@ public sealed class ContentWorkspaceTests
         Assert.Equal("First story", page.Find(".entity-title-input").Value);
         Assert.Equal(entity.Id, page.Find(".entity-id").InnerText);
         Assert.Contains("Body copy", page.Find(".entity-form").InnerText);
+        Assert.NotNull(page.Find(".rich-editor"));
+        Assert.Equal(6, page.FindAll(".rich-editor-tool").Count);
     }
 
+    [Fact]
+    public void FilterCapsulesSitAboveTheRecordList()
+    {
+        using var app = new TestApp();
+        var schema = app.AddSchema("Article",
+            new DataField { Name = "title", Type = FieldTypes.Text },
+            new DataField { Name = "publishedAt", Type = FieldTypes.Date });
+        app.AddEntity(schema, ("title", "First story"));
+        app.Session.SelectSchema("Article");
+        app.Session.SelectEntity(null);
+
+        var page = app.Render<ContentWorkspace>();
+        var filters = page.Find(".filter-row");
+        var body = page.Find(".entity-list-body");
+
+        Assert.Equal(3, filters.FindAll(".filter-chip").Count);
+        Assert.True(filters.Bounds.Bottom <= body.Bounds.Y + 0.5f);
+    }
     [Fact]
     public void SearchFiltersRowsAndMapButtonChangesView()
     {
         using var app = new TestApp();
-        var schema = app.AddSchema("Article");
+        var schema = app.AddSchema("Article",
+            new DataField { Name = "title", Type = FieldTypes.Text },
+            new DataField { Name = "publishedAt", Type = FieldTypes.Date });
         app.AddEntity(schema, ("title", "First story"));
         app.AddEntity(schema, ("title", "Second story"));
         app.Session.SelectSchema("Article");
@@ -64,4 +86,8 @@ public sealed class ContentWorkspaceTests
         Assert.True(app.Session.ContentMapOpen);
     }
 }
+
+
+
+
 

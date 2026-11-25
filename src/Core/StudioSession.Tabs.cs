@@ -1,4 +1,4 @@
-using OpenCreativeSuite.Components.Files;
+﻿using OpenCreativeSuite.Components.Files;
 
 namespace WebCanvasDotNet.Core;
 
@@ -174,6 +174,18 @@ public sealed partial class StudioSession
                 break;
             case StudioMode.Preview:
                 break;
+            case StudioMode.Html:
+            {
+                var (document, node) = HtmlTarget();
+
+                if (document is not null)
+                {
+                    SelectedPageId = document.Id.StartsWith("block:", StringComparison.Ordinal) ? null : document.Id;
+                    SelectedNodeId = node?.Id;
+                }
+
+                break;
+            }
         }
 
         MarkChanged();
@@ -434,3 +446,4 @@ public sealed partial class StudioSession
         });
     }
 }
+

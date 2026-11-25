@@ -1,0 +1,310 @@
+﻿using System.Collections.Generic;
+using System.Net;
+using System.Text;
+using System.Text.RegularExpressions;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+public sealed class RichTextEditorProps : Props
+{
+}
+
+/// <summary>
+/// A small visual rich-text editor. It edits page-like blocks (paragraphs,
+/// headings, quotes, lists and code) and stores the result as simple HTML.
+/// </summary>
+public sealed class RichTextEditor : Component<RichTextEditorProps>
+{
+    private sealed class RichBlock
+    {
+        public string Kind { get; set; } = "p";
+
+        public string Text { get; set; } = "";
+    }
+
+    public override Node Render()
+    {
+        RichTextEditorProps props = Props;
+        StudioSession session = UseContext(SessionContext.Value);
+        var (blocks, setBlocks) = State(() => Parse(props.Value));
+
+        void Save(List<RichBlock> next)
+        {
+            setBlocks(next);
+            props.OnChange?.Invoke(Serialize(next));
+        }
+
+        List<Node> rows = [];
+
+        for (int index = 0; index < blocks.Count; index++)
+        {
+            rows.Add(BlockRow(session, blocks, index, Save));
+        }
+
+        return (
+            <div className="rich-editor">
+                <div className="rich-editor-toolbar">
+                    {ToolbarButton("Paragraph", "p", blocks, Save)}
+                    {ToolbarButton("H2", "h2", blocks, Save)}
+                    {ToolbarButton("H3", "h3", blocks, Save)}
+                    {ToolbarButton("Quote", "quote", blocks, Save)}
+                    {ToolbarButton("List", "list", blocks, Save)}
+                    {ToolbarButton("Code", "code", blocks, Save)}
+                    <span className="rich-editor-hint">{Text("Edits are saved as HTML.")}</span>
+                </div>
+                <div className="rich-editor-sheet">{F(rows.ToArray())}</div>
+            </div>
+        );
+    }
+
+    private static Node ToolbarButton(
+        string label,
+        string kind,
+        List<RichBlock> blocks,
+        Action<List<RichBlock>> save)
+    {
+        return (
+            <button className="rich-editor-tool"
+                onClick={() =>
+                {
+                    var next = new List<RichBlock>(blocks) { new RichBlock { Kind = kind } };
+                    save(next);
+                }}>
+                {Text(label)}
+            </button>);
+    }
+
+    private static Node BlockRow(
+        StudioSession session,
+        List<RichBlock> blocks,
+        int index,
+        Action<List<RichBlock>> save)
+    {
+        RichBlock block = blocks[index];
+        string kindClass = "is-" + block.Kind;
+        int rows = block.Kind switch
+        {
+            "h2" or "h3" => 1,
+            "code" => 5,
+            "list" => Math.Max(2, block.Text.Split('\n').Length),
+            _ => 3,
+        };
+
+        Node editor = (
+            <textarea className={"rich-editor-input " + kindClass}
+                placeholder={block.Kind == "p" ? "Write here…" : BlockPlaceholder(block.Kind)}
+                attributes={new() { ["rows"] = rows.ToString() }}
+                onInput={value =>
+                {
+                    block.Text = value;
+                    save(new List<RichBlock>(blocks));
+                }}
+                onFocus={() => session.IsTyping = true}
+                onBlur={() => session.IsTyping = false}>
+                {Text(block.Text)}
+            </textarea>);
+
+        return (
+            <div className="rich-editor-block">
+                <div className="rich-editor-tools">
+                    <button className="icon-btn" title="Move block up"
+                        onClick={() => Move(blocks, save, index, -1)}>
+                        {Ui.Icon(Icons.Up)}
+                    </button>
+                    <button className="icon-btn" title="Move block down"
+                        onClick={() => Move(blocks, save, index, 1)}>
+                        {Ui.Icon(Icons.Down)}
+                    </button>
+                    <button className="icon-btn is-danger" title="Delete block"
+                        onClick={() => Delete(blocks, save, index)}>
+                        {Ui.Icon(Icons.Delete)}
+                    </button>
+                </div>
+                {editor}
+            </div>);
+    }
+
+    private static string BlockPlaceholder(string kind) => kind switch
+    {
+        "h2" => "Section heading",
+        "h3" => "Smaller heading",
+        "quote" => "A sentence worth setting apart.",
+        "list" => "One item per line",
+        "code" => "Code sample",
+        _ => "Paragraph",
+    };
+
+    private static void Move(List<RichBlock> blocks, Action<List<RichBlock>> save, int index, int direction)
+    {
+        int target = index + direction;
+
+        if (target < 0 || target >= blocks.Count)
+        {
+            return;
+        }
+
+        var next = new List<RichBlock>(blocks);
+        (next[index], next[target]) = (next[target], next[index]);
+        save(next);
+    }
+
+    private static void Delete(List<RichBlock> blocks, Action<List<RichBlock>> save, int index)
+    {
+        var next = new List<RichBlock>(blocks);
+        next.RemoveAt(index);
+
+        if (next.Count == 0)
+        {
+            next.Add(new RichBlock());
+        }
+
+        save(next);
+    }
+
+    private static List<RichBlock> Parse(string? value)
+    {
+        var blocks = new List<RichBlock>();
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            blocks.Add(new RichBlock());
+            return blocks;
+        }
+
+        MatchCollection matches = Regex.Matches(
+            value,
+            @"<\s*(h[1-6]|p|blockquote|pre|ul|ol)\b[^>]*>(.*?)<\s*/\s*\1\s*>",
+            RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+        if (matches.Count == 0)
+        {
+            foreach (string paragraph in Regex.Split(value, @"\r?\n\s*\r?\n"))
+            {
+                if (!string.IsNullOrWhiteSpace(paragraph))
+                {
+                    blocks.Add(new RichBlock { Text = CleanText(paragraph) });
+                }
+            }
+
+            if (blocks.Count == 0)
+            {
+                blocks.Add(new RichBlock());
+            }
+
+            return blocks;
+        }
+
+        foreach (Match match in matches)
+        {
+            string tag = match.Groups[1].Value.ToLowerInvariant();
+            string body = match.Groups[2].Value;
+            string kind = tag switch
+            {
+                "h2" => "h2",
+                "h3" => "h3",
+                "blockquote" => "quote",
+                "pre" => "code",
+                "ul" or "ol" => "list",
+                _ => "p",
+            };
+
+            string text = kind == "list" ? ListText(body) : CleanText(body);
+
+            if (text.Length > 0 || kind != "p")
+            {
+                blocks.Add(new RichBlock { Kind = kind, Text = text });
+            }
+        }
+
+        if (blocks.Count == 0)
+        {
+            blocks.Add(new RichBlock());
+        }
+
+        return blocks;
+    }
+
+    private static string ListText(string body)
+    {
+        var items = new List<string>();
+
+        foreach (Match match in Regex.Matches(
+                     body,
+                     @"<\s*li\b[^>]*>(.*?)<\s*/\s*li\s*>",
+                     RegexOptions.IgnoreCase | RegexOptions.Singleline))
+        {
+            string text = CleanText(match.Groups[1].Value);
+
+            if (text.Length > 0)
+            {
+                items.Add(text);
+            }
+        }
+
+        return string.Join("\n", items);
+    }
+
+    private static string CleanText(string html)
+    {
+        string text = Regex.Replace(html, @"<\s*br\s*/?\s*>", "\n", RegexOptions.IgnoreCase);
+        text = Regex.Replace(text, @"<[^>]+>", "");
+        return WebUtility.HtmlDecode(text).Trim();
+    }
+
+    private static string Serialize(List<RichBlock> blocks)
+    {
+        var html = new StringBuilder();
+
+        foreach (RichBlock block in blocks)
+        {
+            string text = block.Text.Trim();
+
+            if (text.Length == 0)
+            {
+                continue;
+            }
+
+            switch (block.Kind)
+            {
+                case "h2":
+                    html.Append("<h2>").Append(Inline(text)).Append("</h2>");
+                    break;
+
+                case "h3":
+                    html.Append("<h3>").Append(Inline(text)).Append("</h3>");
+                    break;
+
+                case "quote":
+                    html.Append("<blockquote>").Append(Inline(text)).Append("</blockquote>");
+                    break;
+
+                case "code":
+                    html.Append("<pre>").Append(WebUtility.HtmlEncode(text)).Append("</pre>");
+                    break;
+
+                case "list":
+                    html.Append("<ul>");
+
+                    foreach (string item in text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    {
+                        html.Append("<li>").Append(WebUtility.HtmlEncode(item)).Append("</li>");
+                    }
+
+                    html.Append("</ul>");
+                    break;
+
+                default:
+                    html.Append("<p>").Append(Inline(text)).Append("</p>");
+                    break;
+            }
+        }
+
+        return html.ToString();
+    }
+
+    private static string Inline(string text) =>
+        WebUtility.HtmlEncode(text).Replace("\n", "<br>");
+}

@@ -42,6 +42,9 @@
 }
 
 .entity-list-search {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     padding: 8px 9px;
     flex-shrink: 0;
     border-bottom: 1px solid var(--line-soft);
@@ -293,4 +296,5 @@
     color: var(--accent);
     font-weight: 600;
 }
+
 
