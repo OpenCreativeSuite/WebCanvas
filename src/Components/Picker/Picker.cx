@@ -1,0 +1,84 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>One option in a <see cref="Picker"/>.</summary>
+public sealed class PickerOption
+{
+    public string Value { get; set; } = "";
+
+    public string Label { get; set; } = "";
+}
+
+public sealed class PickerProps : Props
+{
+    public List<PickerOption> Options { get; set; } = new();
+
+    public string SelectedValue { get; set; } = "";
+
+    public Action<string>? OnSelect { get; set; }
+
+    public string PlaceholderText { get; set; } = "Select…";
+
+    public string ExtraClass { get; set; } = "";
+}
+
+/// <summary>
+/// A themed dropdown. The platform paints native select menus with light chrome
+/// that cannot be themed, so application selects use this listbox instead.
+/// </summary>
+public sealed class Picker : Component<PickerProps>
+{
+    public override Node Render()
+    {
+        PickerProps props = Props;
+        var (open, setOpen) = State(false);
+        PickerOption? selected = props.Options.FirstOrDefault(option => option.Value == props.SelectedValue);
+        string label = selected?.Label ?? props.PlaceholderText;
+
+        List<Node> items = [];
+
+        foreach (PickerOption option in props.Options)
+        {
+            PickerOption captured = option;
+            bool active = option.Value == props.SelectedValue;
+            items.Add(
+                <button className={active ? "picker-item is-selected" : "picker-item"}
+                    role="option"
+                    attributes={new() { ["aria-selected"] = active ? "true" : "false" }}
+                    onClick={() =>
+                    {
+                        setOpen(false);
+                        props.OnSelect?.Invoke(captured.Value);
+                    }}>
+                    <span className="picker-item-label">{Text(option.Label)}</span>
+                    {Show(active, <span className="picker-check">{Ui.Icon(Icons.Check)}</span>)}
+                </button>);
+        }
+
+        return (
+            <div className={$"picker {props.ExtraClass}{(open ? " is-open" : "")}".TrimEnd()}>
+                <button className="picker-trigger"
+                    title={label}
+                    role="combobox"
+                    attributes={new()
+                    {
+                        ["aria-haspopup"] = "listbox",
+                        ["aria-expanded"] = open ? "true" : "false",
+                    }}
+                    onClick={() => setOpen(!open)}>
+                    <span className="picker-value">{Text(label)}</span>
+                    {Ui.Icon(Icons.ChevronDown, "picker-caret")}
+                </button>
+
+                {Show(open,
+                    <div className="picker-pop" role="listbox">
+                        {Show(items.Count == 0, <div className="picker-empty">{Text("No options")}</div>)}
+                        {F(items.ToArray())}
+                    </div>)}
+            </div>
+        );
+    }
+}

@@ -1,0 +1,158 @@
+﻿/* Contextual left sidebar and side rows. */
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 258px;
+    flex-shrink: 0;
+    min-height: 0;
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid var(--line);
+}
+
+.sidebar.is-narrow {
+    width: 228px;
+}
+
+.sidebar-head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 42px;
+    padding: 0 10px 0 14px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.sidebar-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 10.5px;
+    font-weight: 650;
+    letter-spacing: 0.075em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.sidebar-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.sidebar-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px 12px 8px 8px;
+}
+
+.sidebar-pad {
+    padding: 10px 8px 4px;
+}
+
+.side-group {
+    margin-bottom: 12px;
+}
+
+.side-group-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    color: var(--text-faint);
+    font-size: 9.5px;
+    font-weight: 650;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.side-group-head .side-group-count {
+    margin-left: auto;
+    letter-spacing: 0;
+    font-weight: 500;
+}
+
+.side-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 6px;
+    background-color: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    text-align: left;
+}
+
+.side-row .fa {
+    width: 14px;
+    flex-shrink: 0;
+    color: var(--text-faint);
+    font-size: 11px;
+    text-align: center;
+}
+
+.side-row:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.side-row.is-active {
+    background-color: var(--bg-active);
+    color: var(--text);
+    font-weight: 600;
+}
+
+.side-row.is-active .fa {
+    color: var(--accent);
+}
+
+.side-row-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.side-count {
+    flex-shrink: 0;
+    font-size: 9.5px;
+    color: var(--text-faint);
+}
+
+.side-note {
+    padding: 8px 10px;
+    font-size: 10.5px;
+    line-height: 1.5;
+    color: var(--text-faint);
+}
+
+.side-empty {
+    padding: 18px 12px;
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--text-faint);
+    text-align: center;
+}
+
+.sidebar-search {
+    padding: 2px 4px 8px;
+}
+
+/* --------------------------------------------------------------- workspace */
+
+
+.side-section-rule {
+    height: 1px;
+    margin: 8px 8px 10px;
+    background-color: var(--line-soft);
+}
+

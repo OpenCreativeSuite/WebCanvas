@@ -1,0 +1,214 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>The data modelling workspace: schema structure and relationships.</summary>
+public sealed class DataWorkspace : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        DataSchema? schema = session.CurrentSchema;
+
+        return (
+            <div className="workspace">
+                <div className="mode-bar">
+                    <div className="mode-bar-title">
+                        {Ui.Icon(Icons.Data)}
+                        <span>{Text("Data")}</span>
+                    </div>
+                    {Show(schema is not null, schema is null ? null :
+                        <div className="mode-bar-crumb">
+                            {Ui.Icon(Icons.ChevronRight)}
+                            <span>{Text(schema.Name)}</span>
+                        </div>)}
+                    <span className="flex-spacer" />
+                    {Show(schema is not null,
+                        <div className="mode-bar-actions">
+                            {Ui.Button("Records", () => session.OpenRecords(schema!), "secondary", Icons.File, small: true)}
+                            {Ui.Button("Regenerate APIs", session.RegenerateApis, "ghost", Icons.Refresh, small: true)}
+                        </div>)}
+                </div>
+
+                {Show(schema is null,
+                    <div className="workspace-empty">
+                        <div className="empty-icon">{Ui.Icon(Icons.Database)}</div>
+                        <div className="workspace-empty-title">{Text("Model the things your site is made of.")}</div>
+                        <div className="workspace-empty-copy">
+                            {Text("A data type describes a kind of record — a post, an author, a project. Fields define what each record can hold.")}
+                        </div>
+                        {Ui.Button("Create a data type", session.NewSchema, "primary", Icons.Plus)}
+                    </div>)}
+
+                {Show(schema is not null, schema is null ? null :
+                    <div className="workspace-scroll">
+                        <div className="schema-page">
+                            <header className="schema-header">
+                                <div className="schema-mark">{Ui.Icon(schema.Icon)}</div>
+                                <div className="schema-heading">
+                                    <h1 className="schema-title">{Text(schema.Name)}</h1>
+                                    <div className="schema-meta">
+                                        <span className="mono">{Text("app/data/" + Ids.Slug(schema.Plural))}</span>
+                                        <span className="schema-dot">·</span>
+                                        <span>{Text((session.Project?.CountOf(schema) ?? 0) + " records")}</span>
+                                        <span className="schema-dot">·</span>
+                                        <span>{Text(schema.Fields.Count + " fields")}</span>
+                                        {Show(schema.Public, <span className="badge tone-accent">Public</span>)}
+                                        {Show(!schema.Public, <span className="badge">Private</span>)}
+                                    </div>
+                                </div>
+                                <div className="inline-actions">
+                                    {Ui.Button("Show on site", () => session.ShowSchemaOnSite(schema!), "secondary", Icons.Eye, small: true)}
+                                    {Ui.Button("Rename", () => session.RenameSchema(schema!), "ghost", Icons.Edit, small: true)}
+                                    {Ui.Button("Delete type", () => session.DeleteSchema(schema!), "ghost", Icons.Delete, small: true)}
+                                </div>
+                            </header>
+
+                            {Ui.Field("Description",
+                                Ui.Input(session, schema.Description, value => session.SetSchemaMeta(schema, target => target.Description = value), "What is this kind of record for?", "schema-description"))}
+
+                            <section className="schema-section">
+                                <div className="schema-section-head">
+                                    <div>
+                                        <h2 className="schema-section-title">{Text("Fields")}</h2>
+                                        <p className="schema-section-copy">{Text("The shape of one record. Field names become JSON keys; labels are what editors see.")}</p>
+                                    </div>
+                                    {Ui.Button("Add field", session.ToggleAddFieldMenu, "secondary", Icons.Plus, small: true)}
+                                </div>
+
+                                {Show(session.AddFieldMenuOpen, AddFieldMenu(session, schema))}
+
+                                <div className="field-list">
+                                    {Show(schema.Fields.Count == 0,
+                                        <div className="field-list-empty">{Text("No fields yet. Add the first one to give this type a shape.")}</div>)}
+                                    {Each(schema.Fields, field =>
+                                    {
+                                        DataField captured = field;
+                                        bool selected = session.SelectedFieldName == field.Name;
+                                        int index = schema.Fields.IndexOf(field);
+                                        return (
+                                            <div className={selected ? "field-card is-selected" : "field-card"}
+                                                onClickEvent={e => { e.StopPropagation(); session.SelectField(captured.Name); }}>
+                                                <span className="field-grip">{Ui.Icon(Icons.Grip)}</span>
+                                                <span className="field-type-icon">{Ui.Icon(Icons.ForField(field.Type))}</span>
+                                                <div className="field-card-copy">
+                                                    <div className="field-card-title">
+                                                        <span>{Text(field.Display)}</span>
+                                                        {Show(field.Required, <span className="badge tone-warning">Required</span>)}
+                                                        {Show(field.Type == FieldTypes.Relation && field.Target is not null,
+                                                            <span className="badge tone-accent">{Text("→ " + field.Target)}</span>)}
+                                                    </div>
+                                                    <div className="field-card-sub">
+                                                        <span className="mono">{Text(field.Name)}</span>
+                                                        <span className="schema-dot">·</span>
+                                                        <span>{Text(FieldTypes.Label(field.Type))}</span>
+                                                        {Show(field.Options is { Count: > 0 }, <span>{Text(" · " + (field.Options?.Count ?? 0) + " options")}</span>)}
+                                                    </div>
+                                                </div>
+                                                <div className="field-card-actions">
+                                                    {Ui.IconButton(Icons.Up, "Move field up", () => session.MoveField(schema, captured, -1), enabled: index > 0)}
+                                                    {Ui.IconButton(Icons.Down, "Move field down", () => session.MoveField(schema, captured, 1), enabled: index < schema.Fields.Count - 1)}
+                                                    {Ui.IconButton(Icons.ChevronRight, "Field settings", () => session.SelectField(captured.Name))}
+                                                </div>
+                                            </div>);
+                                    })}
+                                </div>
+                            </section>
+
+                            <section className="schema-section">
+                                <div className="schema-section-head">
+                                    <div>
+                                        <h2 className="schema-section-title">{Text("Routing")}</h2>
+                                        <p className="schema-section-copy">
+                                            {Text("Choose the page that renders one record. The page becomes the route template and is not published at its own address.")}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {Ui.Field("Detail page",
+                                    Ui.Select(session,
+                                        (new[] { ("", "No detail page") }).Concat(
+                                            (session.Project?.Pages ?? [])
+                                                .Where(page => !page.IsHome)
+                                                .Select(page => (page.Id, page.Title + " · /" + page.Slug)))
+                                            .ToList(),
+                                        schema.DetailPageId ?? "",
+                                        value => session.SetSchemaMeta(schema, target => target.DetailPageId = value.Length == 0 ? null : value)),
+                                    "Records publish at " + (schema.HasSlugField
+                                        ? "/" + Ids.Slug(schema.Plural) + "/{slug}"
+                                        : "/" + Ids.Slug(schema.Plural) + "/{id}")
+                                    + ". Use {{title}}, {{slug}} and {{field}} tokens in the page content.")}
+
+                                <div className="inline-actions">
+                                    {Ui.Button("Create page template", () => session.CreateDetailPage(schema), "secondary", Icons.Plus, small: true)}
+                                </div>
+                            </section>
+
+                            <section className="schema-section is-quiet">
+                                <div className="schema-output">
+                                    <div>
+                                        <div className="schema-output-title">{Text("Published output")}</div>
+                                        <div className="schema-output-copy">
+                                            {Text("Records are written to /data/" + Ids.Slug(schema.Plural) + "/ as JSON. Relationships keep the target id, so the data stays portable.")}
+                                        </div>
+                                    </div>
+                                    <div className="schema-output-links">
+                                        {Ui.Button("Open records", () => session.OpenRecords(schema), "secondary", Icons.File, small: true)}
+                                        {Ui.Button("Regenerate APIs", session.RegenerateApis, "ghost", Icons.Refresh, small: true)}
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>)}
+            </div>
+        );
+    }
+
+    private static Node AddFieldMenu(StudioSession session, DataSchema schema)
+    {
+        List<Node> options = [];
+
+        foreach (string type in FieldTypes.All)
+        {
+            string captured = type;
+            options.Add(
+                <button className="field-type-option" onClick={() => session.AddField(schema, captured)}>
+                    <span className="field-type-mark">{Ui.Icon(Icons.ForField(type))}</span>
+                    <span className="field-type-copy">
+                        <span className="field-type-name">{Text(FieldTypes.Label(type))}</span>
+                        <span className="field-type-desc">{Text(FieldTypeHint(type))}</span>
+                    </span>
+                </button>);
+        }
+
+        return (
+            <div className="field-type-menu">
+                <div className="field-type-menu-head">
+                    <span>{Text("Add a field")}</span>
+                    <button className="icon-btn" title="Close" onClick={session.ToggleAddFieldMenu}>
+                        {Ui.Icon(Icons.Close)}
+                    </button>
+                </div>
+                <div className="field-type-grid">{F(options.ToArray())}</div>
+            </div>
+        );
+    }
+
+    private static string FieldTypeHint(string type) => type switch
+    {
+        FieldTypes.Text => "A single line of text",
+        FieldTypes.LongText => "A paragraph or a few",
+        FieldTypes.RichText => "Paragraphs with structure",
+        FieldTypes.Number => "A numeric value",
+        FieldTypes.Boolean => "True or false",
+        FieldTypes.Date => "A calendar date",
+        FieldTypes.Select => "One of a fixed list",
+        FieldTypes.Relation => "A link to another record",
+        FieldTypes.Image => "An image path",
+        FieldTypes.Url => "A web address",
+        _ => "A custom value",
+    };
+}

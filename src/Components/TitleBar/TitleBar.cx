@@ -1,0 +1,73 @@
+using Donkeh.UILab;
+using Donkeh.Windowing;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>The frameless window title bar and the global command entry point.</summary>
+public sealed class TitleBar : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        string projectName = session.Project?.Name ?? "No project open";
+        bool maximized = WindowChrome.IsMaximized;
+
+        return (
+            <header className="titlebar">
+                <div className="brand">
+                    <span className="brand-mark" />
+                    <span className="brand-name">WebCanvas</span>
+                </div>
+
+                <button className="project-pill"
+                    title={session.Project is null ? "Open a project" : session.Project.Root}
+                    onClick={session.BrowseForProject}>
+                    {Ui.Icon(Icons.Folder)}
+                    <span className="project-name">{Text(projectName)}</span>
+                </button>
+
+                <button className="command-trigger" onClick={session.OpenPalette}>
+                    {Ui.Icon(Icons.Search)}
+                    <span className="command-label">{Text("Search or run a command")}</span>
+                    {Ui.Key("Ctrl K")}
+                </button>
+
+                <div className="titlebar-right">
+                    <button className={session.ShowSidebar ? "titlebar-tool is-active" : "titlebar-tool"}
+                        title={session.ShowSidebar ? "Hide sidebar (Ctrl+B)" : "Show sidebar (Ctrl+B)"}
+                        onClick={session.ToggleSidebar}>
+                        {Ui.Icon(Icons.Bars)}
+                        <span className="control-tip">{Text(session.ShowSidebar ? "Hide sidebar" : "Show sidebar")}</span>
+                    </button>
+                    <button className={session.ShowInspector ? "titlebar-tool is-active" : "titlebar-tool"}
+                        title={session.ShowInspector ? "Hide inspector (Ctrl+Shift+I)" : "Show inspector (Ctrl+Shift+I)"}
+                        onClick={session.ToggleInspector}>
+                        {Ui.Icon(Icons.Sliders)}
+                        <span className="control-tip">{Text(session.ShowInspector ? "Hide inspector" : "Show inspector")}</span>
+                    </button>
+                    <button className="titlebar-tool"
+                        title={session.Dark ? "Switch to light theme" : "Switch to dark theme"}
+                        onClick={session.ToggleTheme}>
+                        {Ui.Icon(session.Dark ? Icons.Sun : Icons.Moon)}
+                    </button>
+
+                    <div className="window-controls">
+                        <button className="window-btn" title="Minimise" onClick={WindowChrome.Minimize}>
+                            {Ui.Icon(Icons.Minus)}
+                        </button>
+                        <button className="window-btn"
+                            title={maximized ? "Restore" : "Maximise"}
+                            onClick={WindowChrome.ToggleMaximize}>
+                            {Ui.Icon(Icons.Square, "", regular: !maximized)}
+                        </button>
+                        <button className="window-btn is-close" title="Close" onClick={WindowChrome.Close}>
+                            {Ui.Icon(Icons.Close)}
+                        </button>
+                    </div>
+                </div>
+            </header>
+        );
+    }
+}

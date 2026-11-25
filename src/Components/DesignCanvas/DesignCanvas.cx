@@ -1,0 +1,165 @@
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>Renders the live page tree inside the design viewport.</summary>
+public sealed class DesignCanvas : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        PageDoc? page = session.CurrentPage;
+        WcProject? project = session.Project;
+
+        if (page is null || project is null)
+        {
+            return (
+                <div className="canvas-stage">
+                    {Ui.Empty(Icons.File, "No page selected", "Choose a page from the sidebar to start designing.")}
+                </div>
+            );
+        }
+
+        double scale = session.CanvasScale;
+        int width = session.SelectedViewportWidth;
+        int scaledWidth = (int)Math.Round(width * scale);
+        int canvasMinHeight = Math.Max(820, (int)Math.Ceiling(820 / scale));
+        bool wireframe = session.IsDropWireframe;
+        string paperClass = "canvas-paper"
+                            + (session.IsEditingBlock ? " is-block" : "")
+                            + (wireframe ? " is-wireframe" : "");
+
+        Node pageNode = SiteRenderer.RenderPage(page, project, new SiteRenderer.CanvasEdit
+        {
+            SelectedId = session.SelectedNodeId,
+            Select = id => session.SelectNode(id),
+            Editing = session.CanvasEditing,
+            Dragging = session.IsWidgetDragging,
+            Scale = (float)scale,
+            CanvasMinHeight = canvasMinHeight,
+            IsDragging = () => session.IsWidgetDragging,
+            Hint = session.DropHint,
+            Hover = (id, position, hint) =>
+                session.HoverDrop(id, position, hint.Index, hint.X, hint.Y, hint.Width, hint.Height,
+                    hint.PointerX, hint.PointerY),
+            Drop = (id, position, index) =>
+                session.DropWidgetAt(id.Length == 0 ? null : id, position, index),
+        });
+
+        return (
+            <div className="canvas-stage"
+                onClickEvent={e =>
+                {
+                    e.StopPropagation();
+                    if (session.SelectedNodeId is not null)
+                    {
+                        session.SelectNode(null);
+                    }
+                }}
+                onDragOver={e =>
+                {
+                    if (session.DraggedWidget is not null)
+                    {
+                        e.PreventDefault();
+                        e.Data.DropEffect = "copy";
+                        session.ClearDropHint();
+                    }
+                }}
+                onDragLeave={_ =>
+                {
+                    if (session.DraggedWidget is not null)
+                    {
+                        session.ClearDropHint();
+                    }
+                }}
+                onDrop={e =>
+                {
+                    if (session.DraggedWidget is not null)
+                    {
+                        e.PreventDefault();
+                        session.DropWidgetAtEnd();
+                    }
+                }}>
+                <div className="canvas-caption">
+                    <span className="canvas-caption-title">{Text(page.Title)}</span>
+                    {Show(session.IsEditingBlock,
+                        <span className="canvas-caption-url">{Text("Reusable block")}</span>)}
+                    {Show(!session.IsEditingBlock,
+                        <span className="canvas-caption-url mono">{Text(page.IsHome ? "/" : "/" + page.Slug + "/")}</span>)}
+                    <span className="canvas-caption-size">{Text(width + " px")}</span>
+                </div>
+
+                {Show(session.IsWidgetDragging,
+                    <div className="canvas-drag-banner">
+                        {Ui.Icon(Icons.Grip)}
+                        {Text("Drop “" + session.WidgetDragLabel + "” into the page")}
+                    </div>)}
+
+                <div className="canvas-scroll">
+                    <div className="canvas-slot" attributes={new() { ["style"] = "width:" + scaledWidth + "px" }}>
+                        <div className={paperClass}
+                            attributes={new()
+                            {
+                                ["style"] = "width:" + width + "px;min-height:" + canvasMinHeight + "px;transform:scale(" + scale.ToString(System.Globalization.CultureInfo.InvariantCulture) + ");",
+                            }}>
+                            {pageNode}
+                            {Show(wireframe,
+                                <div className="drop-map">
+                                    {Each(session.DropBounds, bound => DropBox(bound, session.DropHint?.TargetId))}
+                                </div>)}
+                        </div>
+                    </div>
+                </div>
+
+                {Show(session.DropHint is not null,
+                    session.DropHint is null ? null : DropPreview(session.DropHint))}
+
+                {Show(!session.CanvasEditing,
+                    <div className="canvas-preview-badge">
+                        {Ui.Icon(Icons.Eye)}
+                        {Text("Preview — switch to Edit to change the page")}
+                    </div>)}
+            </div>
+        );
+    }
+
+    private static Node DropBox(DropBound bound, string? targetId)
+    {
+        string className = "drop-map-box"
+                           + (bound.IsBlock ? " is-block" : "")
+                           + (bound.IsPage ? " is-page" : "")
+                           + (bound.Depth > 3 ? " is-deep" : "")
+                           + (string.Equals(bound.NodeId, targetId, StringComparison.Ordinal) ? " is-target" : "");
+        string style = "left:" + bound.X.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+                       + "px;top:" + bound.Y.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+                       + "px;width:" + bound.Width.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+                       + "px;height:" + bound.Height.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+                       + "px;";
+
+        return (
+            <div className={className} attributes={new() { ["style"] = style }}>
+                {Show(bound.ShowLabel, <span className="drop-map-label">{Text(bound.Label)}</span>)}
+            </div>);
+    }
+
+    private static Node DropPreview(DropHint hint)
+    {
+        double left = Math.Clamp(hint.X, 4, 1400);
+        double width = Math.Clamp(hint.Width, 80, Math.Max(80, 1436 - left));
+        double top = Math.Clamp(hint.PointerY - 36, 0, 788);
+        string style = "left:" + left.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+                       + "px;top:" + top.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+                       + "px;width:" + width.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+                       + "px;";
+
+        return (
+            <div className="drop-preview" attributes={new() { ["style"] = style }}>
+                <span className="drop-preview-chip">
+                    {Ui.Icon(Icons.Plus)}
+                    {Text("Drop " + hint.Label + " here")}
+                </span>
+            </div>);
+    }
+}

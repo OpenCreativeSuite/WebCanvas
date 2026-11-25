@@ -1,0 +1,301 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>Event-driven automation: handlers, conditions, ordered actions and a test log.</summary>
+public sealed class AutomationWorkspace : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        List<HandlerDoc> handlers = session.HandlersFor(session.SelectedEvent);
+
+        return (
+            <div className="workspace">
+                <div className="mode-bar">
+                    <div className="mode-bar-title">
+                        {Ui.Icon(Icons.Automation)}
+                        <span>{Text("Automation")}</span>
+                    </div>
+                    <div className="mode-bar-crumb">
+                        {Ui.Icon(Icons.ChevronRight)}
+                        <span>{Text(StudioSession.EventLabel(session.SelectedEvent))}</span>
+                    </div>
+                    <span className="flex-spacer" />
+                    <div className="mode-bar-actions">
+                        {Ui.Button("Run all", () =>
+                        {
+                            foreach (HandlerDoc handler in session.HandlersFor(session.SelectedEvent).Where(item => item.Enabled))
+                            {
+                                session.RunHandler(handler);
+                            }
+                        }, "ghost", Icons.Play, small: true)}
+                        {Ui.Button("New handler", () => session.NewHandler(session.SelectedEvent), "primary", Icons.Plus, small: true)}
+                    </div>
+                </div>
+
+                <div className="automation-split">
+                    <div className="handler-list">
+                        <div className="handler-list-head">
+                            <div>
+                                <div className="handler-list-title">{Text(StudioSession.EventLabel(session.SelectedEvent))}</div>
+                                <div className="handler-list-count">{Text(handlers.Count + (handlers.Count == 1 ? " handler" : " handlers"))}</div>
+                            </div>
+                        </div>
+
+                        <div className="handler-list-body">
+                            {Show(handlers.Count == 0,
+                                <div className="handler-list-empty">
+                                    <div>{Text("Nothing listens to this event yet.")}</div>
+                                    {Ui.Button("Add a handler", () => session.NewHandler(session.SelectedEvent), "secondary", Icons.Plus, small: true)}
+                                </div>)}
+
+                            {Each(handlers, handler =>
+                            {
+                                HandlerDoc captured = handler;
+                                bool selected = session.SelectedHandlerId == handler.Id;
+                                return (
+                                    <button className={selected ? "handler-row is-selected" : "handler-row"}
+                                        onClick={() => session.SelectHandler(captured.Id)}>
+                                        <span className={handler.Enabled ? "dot is-on" : "dot"} />
+                                        <span className="handler-row-copy">
+                                            <span className="handler-row-title">{Text(handler.Name)}</span>
+                                            <span className="handler-row-sub">
+                                                {Text(handler.Actions.Count + (handler.Actions.Count == 1 ? " action" : " actions")
+                                                    + (handler.Conditions.Count > 0 ? " · " + handler.Conditions.Count + " conditions" : ""))}
+                                            </span>
+                                        </span>
+                                        {Show(!handler.Enabled, <span className="badge">Paused</span>)}
+                                    </button>);
+                            })}
+                        </div>
+                    </div>
+
+                    {HandlerEditor(session)}
+                </div>
+            </div>
+        );
+    }
+
+    private static Node HandlerEditor(StudioSession session)
+    {
+        HandlerDoc? handler = session.CurrentHandler is { } candidate && candidate.Event == session.SelectedEvent
+            ? candidate
+            : null;
+
+        if (handler is null)
+        {
+            return (
+                <div className="handler-editor is-empty">
+                    {Ui.Empty(Icons.Bolt,
+                        "Select a handler",
+                        "Handlers decide what happens after an event. Conditions narrow the event; actions run in order.",
+                        Ui.Button("New handler", () => session.NewHandler(session.SelectedEvent), "secondary", Icons.Plus))}
+                </div>
+            );
+        }
+
+        HandlerDoc item = handler;
+        List<DataField> fields = session.HandlerFields(handler);
+
+        return (
+            <div className="handler-editor">
+                <div className="handler-editor-inner">
+                    <header className="handler-header">
+                        <div className="handler-header-main">
+                            <input className="handler-name-input"
+                                type="text"
+                                value={handler.Name}
+                                onChange={value => session.SetHandler(item, target => target.Name = value)}
+                                onFocus={() => session.IsTyping = true}
+                                onBlur={() => session.IsTyping = false} />
+                            <div className="handler-header-meta">
+                                {Ui.Badge(StudioSession.EventLabel(handler.Event), "accent")}
+                                {Ui.Toggle(handler.Enabled, on => session.SetHandler(item, target => target.Enabled = on), handler.Enabled ? "Enabled" : "Paused")}
+                            </div>
+                        </div>
+                        <div className="inline-actions">
+                            {Ui.Button("Test run", () => session.RunHandler(item), "secondary", Icons.Play, small: true)}
+                            {Ui.IconButton(Icons.Delete, "Delete handler", () => session.DeleteHandler(item), extra: "is-danger")}
+                        </div>
+                    </header>
+
+                    <div className="handler-flow-wrap">
+                        <div className="handler-flow-head">
+                            <span className="handler-flow-title">{Text("Flow")}</span>
+                            <span className="handler-flow-hint">{Text("event → handler → actions")}</span>
+                        </div>
+                        <div className="handler-flow">
+                            <GraphView Graph={AutomationFlow.Build(handler)}
+                                SelectedId="handler"
+                                OnSelect={id =>
+                                {
+                                    if (id == "event")
+                                    {
+                                        session.SelectEvent(item.Event);
+                                    }
+                                    else
+                                    {
+                                        session.SelectHandler(item.Id);
+                                    }
+                                }} />
+                        </div>
+                    </div>
+
+                    <div className="handler-config">
+                        {Ui.Field("Event",
+                            Ui.Select(session,
+                                StudioSession.Events.Select(evt => (evt.Id, evt.Label)),
+                                handler.Event,
+                                value =>
+                                {
+                                    session.SetHandler(item, target => target.Event = value);
+                                    session.SelectEvent(value);
+                                    session.SelectHandler(item.Id);
+                                }))}
+
+                        {Show(StudioSession.Events.FirstOrDefault(evt => evt.Id == handler.Event).Scoped,
+                            Ui.Field("Record type",
+                                Ui.Select(session,
+                                    new[] { ("", "Any type") }.Concat((session.Project?.Schemas ?? []).Select(schema => (schema.Name, schema.Name))),
+                                    handler.EntityType ?? "",
+                                    value => session.SetHandler(item, target => target.EntityType = value.Length == 0 ? null : value)),
+                                "Conditions and field actions use the fields of this type."))}
+                    </div>
+
+                    {Ui.Section(session, "auto-conditions", "Conditions",
+                        <div>
+                            {Show(handler.Conditions.Count == 0,
+                                <div className="handler-hint">{Text("Runs for every event. Add a condition to narrow it down.")}</div>)}
+
+                            {Each(handler.Conditions, condition =>
+                            {
+                                ConditionDoc captured = condition;
+                                return (
+                                    <div className="condition-row">
+                                        {Ui.Select(session,
+                                            new[] { ("", "Any field") }.Concat(fields.Select(field => (field.Name, field.Display))),
+                                            condition.Field,
+                                            value => session.SetHandler(item, target => captured.Field = value),
+                                            "condition-field")}
+                                        {Ui.Select(session,
+                                            ConditionDoc.Operators.Select(op => (op, op)),
+                                            condition.Operator,
+                                            value => session.SetHandler(item, target => captured.Operator = value),
+                                            "condition-op")}
+                                        {Show(condition.Operator is not ("is set" or "is empty"),
+                                            <input className="text-input condition-value"
+                                                type="text"
+                                                value={condition.Value}
+                                                placeholder="Value"
+                                                onChange={value => session.SetHandler(item, target => captured.Value = value)}
+                                                onFocus={() => session.IsTyping = true}
+                                                onBlur={() => session.IsTyping = false} />)}
+                                        {Ui.IconButton(Icons.Close, "Remove condition", () => session.RemoveCondition(item, captured))}
+                                    </div>);
+                            })}
+
+                            {Ui.Button("Add condition", () => session.AddCondition(item), "ghost", Icons.Plus, small: true)}
+                        </div>,
+                        subtitle: handler.Conditions.Count.ToString())}
+
+                    {Ui.Section(session, "auto-actions", "Actions",
+                        <div>
+                            {Show(handler.Actions.Count == 0,
+                                <div className="handler-hint">{Text("No actions yet. A handler with no actions does nothing.")}</div>)}
+
+                            {Each(handler.Actions, action =>
+                            {
+                                ActionDoc captured = action;
+                                int index = handler.Actions.IndexOf(action);
+                                return (
+                                    <div className="action-row">
+                                        <span className="action-index">{Text((index + 1).ToString())}</span>
+                                        <div className="action-main">
+                                            <div className="action-line">
+                                                {Ui.Select(session,
+                                                    ActionDoc.Types.Select(type => (type, ActionLabel(type))),
+                                                    action.Type,
+                                                    value => session.SetHandler(item, target => captured.Type = value),
+                                                    "action-type")}
+                                                {Show(ActionNeedsValue(action.Type),
+                                                    <input className="text-input action-value"
+                                                        type="text"
+                                                        value={action.Value}
+                                                        placeholder={ActionPlaceholder(action.Type)}
+                                                        onChange={value => session.SetHandler(item, target => captured.Value = value)}
+                                                        onFocus={() => session.IsTyping = true}
+                                                        onBlur={() => session.IsTyping = false} />)}
+                                            </div>
+                                            {Show(ActionNeedsTarget(action.Type),
+                                                <input className="text-input action-target"
+                                                    type="text"
+                                                    value={action.Target ?? ""}
+                                                    placeholder={action.Type == "set field" ? "Target (optional)" : "email@example.com or https://…"}
+                                                    onChange={value => session.SetHandler(item, target => captured.Target = value)}
+                                                    onFocus={() => session.IsTyping = true}
+                                                    onBlur={() => session.IsTyping = false} />)}
+                                        </div>
+                                        <div className="action-actions">
+                                            {Ui.IconButton(Icons.Up, "Move up", () => session.MoveAction(item, captured, -1), enabled: index > 0)}
+                                            {Ui.IconButton(Icons.Down, "Move down", () => session.MoveAction(item, captured, 1), enabled: index < handler.Actions.Count - 1)}
+                                            {Ui.IconButton(Icons.Close, "Remove action", () => session.RemoveAction(item, captured))}
+                                        </div>
+                                    </div>);
+                            })}
+
+                            {Ui.Button("Add action", () => session.AddAction(item), "ghost", Icons.Plus, small: true)}
+                        </div>,
+                        subtitle: handler.Actions.Count.ToString())}
+
+                    {Ui.Section(session, "auto-log", "Test log",
+                        <div>
+                            {Show(session.AutomationLog.Count == 0,
+                                <div className="handler-hint">{Text("Run a handler to see what it would do. This is a local simulation; nothing is sent.")}</div>)}
+
+                            <div className="log-list">
+                                {Each(session.AutomationLog.Take(14), entry => 
+                                    <div className={$"log-row is-{entry.Kind}"}>
+                                        <span className="log-time mono">{Text(entry.At.ToString("HH:mm:ss"))}</span>
+                                        <span className="log-handler">{Text(entry.Handler)}</span>
+                                        <span className="log-message">{Text(entry.Message)}</span>
+                                    </div>)}
+                            </div>
+
+                            {Show(session.AutomationLog.Count > 0,
+                                <div className="inline-actions">
+                                    {Ui.Button("Clear log", session.ClearAutomationLog, "ghost", Icons.Close, small: true)}
+                                </div>)}
+                        </div>,
+                        subtitle: session.AutomationLog.Count.ToString())}
+                </div>
+            </div>
+        );
+    }
+
+    private static string ActionLabel(string type) => type switch
+    {
+        "log" => "Write to log",
+        "notify" => "Notify me",
+        "email" => "Send email",
+        "webhook" => "Call webhook",
+        "set field" => "Set a field",
+        "delay" => "Wait",
+        _ => type,
+    };
+
+    private static string ActionPlaceholder(string type) => type switch
+    {
+        "set field" => "field = value",
+        "delay" => "seconds",
+        "log" or "notify" => "Message",
+        _ => "Message",
+    };
+
+    private static bool ActionNeedsValue(string type) => true;
+
+    private static bool ActionNeedsTarget(string type) => type is "email" or "webhook" or "set field";
+}

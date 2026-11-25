@@ -1,0 +1,61 @@
+﻿/* Workspace host and empty workspace state. */
+
+/* empty workspace */
+
+.workspace-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 10px;
+    padding: 40px;
+    text-align: center;
+    background-color: var(--bg-panel);
+}
+
+.workspace-empty-title {
+    font-size: 16px;
+    font-weight: 650;
+    color: var(--text);
+}
+
+.workspace-empty-copy {
+    max-width: 360px;
+    padding-bottom: 14px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-muted);
+}
+
+.workspace-empty-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 8px;
+    max-width: 540px;
+}
+
+.workspace-empty-mode {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 30px;
+    padding: 0 11px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.workspace-empty-mode:hover {
+    border-color: var(--accent-line);
+    color: var(--accent);
+    background-color: var(--accent-soft);
+}
+
+.workspace-empty-mode .fa {
+    font-size: 10px;
+}
+

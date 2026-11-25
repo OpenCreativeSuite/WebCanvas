@@ -1,0 +1,37 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>The "+" menu on the tab strip.</summary>
+public sealed class ModeMenu : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        List<Node> rows = [];
+
+        foreach (StudioMode mode in ModeInfo.All)
+        {
+            StudioMode target = mode;
+            rows.Add(
+                <button className="mode-menu-row" onClick={() => session.OpenMode(target)}>
+                    {Ui.Icon(ModeInfo.Icon(mode))}
+                    <span className="side-row-label">{Text(ModeInfo.Label(mode))}</span>
+                    <span className="mode-menu-hint">{Text("Ctrl+" + ((int)mode + 1))}</span>
+                </button>);
+        }
+
+        return (
+            <div>
+                <div className="mode-menu-overlay" onClick={session.CloseModeMenu} />
+                <div className="mode-menu">
+                    <div className="mode-menu-title">{Text("Open a workspace")}</div>
+                    {F(rows.ToArray())}
+                </div>
+            </div>
+        );
+    }
+}

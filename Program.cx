@@ -1,0 +1,96 @@
+using Donkeh.Hosting;
+using Donkeh.UILab;
+using Donkeh.Windowing;
+using OpenCreativeSuite.Components.Files;
+using WebCanvasDotNet.Components;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet;
+
+[AppRoot(
+    Width = 1440,
+    Height = 900,
+    Title = "WebCanvasDotNet",
+    Frameless = true,
+    ClearColor = 0xFFF4F5F7,
+    MinWidth = 980,
+    MinHeight = 640)]
+public sealed class App : Component
+{
+    private static bool _siteStyleAdded;
+    private StudioSession? _session;
+
+    protected override void OnMount()
+    {
+        if (!_siteStyleAdded)
+        {
+            _siteStyleAdded = true;
+
+            // The component package may load after the host has already built
+            // its initial stylesheet, so append its embedded styles explicitly.
+            AppRootHost.Current?.AddStylesheet(
+                Donkeh.UILab.Stylesheet.Load(typeof(FileBrowserDialogHost).Assembly));
+            AppRootHost.Current?.AddStylesheet(SiteBlocks.Css);
+        }
+
+        if (Environment.GetCommandLineArgs().Contains("--browse") && _session is not null)
+        {
+            StudioSession session = _session;
+            Host.Post(session.BrowseForProject);
+        }
+    }
+
+    public override Node Render()
+    {
+        Ref<StudioSession> reference = UseRef<StudioSession>();
+        StudioSession session = reference.Value ??= new StudioSession();
+        _session = session;
+        session.Initialize();
+
+        var (_, _, updateTick) = StateWithUpdate(0);
+        session.Refresh = () => updateTick(value => value + 1);
+
+        bool showInspector = session.HasProject
+                             && session.ActiveTab is not null
+                             && session.ShowInspector
+                             && (session.ActiveMode is StudioMode.Design or StudioMode.Data
+                                 || session.ActiveMode == StudioMode.Blocks && session.IsEditingBlock);
+
+        string appClass = "app"
+            + (session.Dark ? " is-dark" : "")
+            + (session.Preferences.UiScale >= 130 ? " is-text-larger" : session.Preferences.UiScale >= 115 ? " is-text-large" : "");
+
+        Node root = <div className={appClass} onKeyDown={key => session.HandleKey(key)}>
+            <TitleBar />
+
+            {Show(session.HasProject, <WorkTabs />)}
+            {Show(!session.HasProject, <Welcome />)}
+
+            {Show(session.HasProject,
+                <div className="shell">
+                    <ActivityRail />
+                    {Show(session.ShowSidebar && session.ActiveMode != StudioMode.Preview, <ContextSidebar />)}
+                    <WorkspaceHost />
+                    {Show(showInspector,
+                        <div className="inspector-host">
+                            {Show(session.ActiveMode is StudioMode.Design or StudioMode.Blocks, <DesignInspector />)}
+                            {Show(session.ActiveMode == StudioMode.Data, <DataInspector />)}
+                        </div>)}
+                </div>)}
+
+            {Show(session.HasProject, <StatusBar />)}
+
+            {Show(session.PaletteOpen, <CommandPalette />)}
+            {Show(session.ShowModeMenu, <ModeMenu />)}
+            {Show(session.CreateOpen, <CreateProjectDialog />)}
+            {Show(session.Prompt is not null, <PromptDialog />)}
+            {Show(session.Confirm is not null, <ConfirmDialog />)}
+            <ToastStack />
+
+            <FileBrowserDialogHost />
+        </div>;
+
+        return Provider(SessionContext.Value, session, root);
+    }
+}

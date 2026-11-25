@@ -1,0 +1,101 @@
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>The Blocks workspace: a library, or the selected block's editor.</summary>
+public sealed class BlocksWorkspace : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+
+        if (session.IsEditingBlock)
+        {
+            return <DesignWorkspace />;
+        }
+
+        WcProject? project = session.Project;
+
+        return (
+            <div className="workspace">
+                <div className="mode-bar">
+                    <div className="mode-bar-title">
+                        {Ui.Icon(Icons.Cube)}
+                        <span>{Text("Blocks")}</span>
+                    </div>
+                    <div className="mode-bar-crumb">
+                        {Ui.Icon(Icons.ChevronRight)}
+                        <span>{Text("Library")}</span>
+                    </div>
+                    <span className="flex-spacer" />
+                    <div className="mode-bar-actions">
+                        {Ui.Button("New theme block", session.NewThemeBlock, "ghost", Icons.Palette, small: true)}
+                        {Ui.Button("New block", session.NewBlock, "primary", Icons.Plus, small: true)}
+                    </div>
+                </div>
+
+                <div className="workspace-scroll">
+                    <div className="blocks-page">
+                        <header className="dev-hero">
+                            <div className="dev-eyebrow">{Text("Blocks")}</div>
+                            <h1 className="dev-title">{Text("Reusable pieces, built once.")}</h1>
+                            <p className="dev-lead">
+                                {Text("Blocks are small documents you can drop onto any page or into another block. Theme blocks are chrome like headers and footers; content blocks are the material inside pages.")}
+                            </p>
+                        </header>
+
+                        {Show(project is not null, <PrefabKit />)}
+
+                        {Show(project is null,
+                            <div className="workspace-empty">
+                                {Ui.Empty(Icons.Cube, "No project open", "Open a project to build blocks.")}
+                            </div>)}
+
+                        {Show(project is not null && project.Blocks.Count == 0,
+                            <div className="blocks-empty">
+                                {Ui.Empty(Icons.Cube,
+                                    "No blocks yet",
+                                    "Create a blank block, or save a page selection in Design as a reusable block.",
+                                    Ui.Button("Create a block", session.NewBlock, "primary", Icons.Plus))}
+                            </div>)}
+
+                        {Show(project is not null && project.Blocks.Count > 0, project is null ? null :
+                            <div className="block-grid">
+                                {Each(project.Blocks
+                                        .OrderBy(block => block.Kind)
+                                        .ThenBy(block => block.Name, StringComparer.OrdinalIgnoreCase),
+                                    block =>
+                                    {
+                                        BlockDoc captured = block;
+                                        int usage = session.BlockUsageCount(block);
+                                        return (
+                                            <button className="block-card" onClick={() => session.OpenBlock(captured)}>
+                                                <span className={block.Kind == "theme" ? "block-card-icon is-theme" : "block-card-icon"}>
+                                                    {Ui.Icon(block.Kind == "theme" ? Icons.Palette : Icons.Cube)}
+                                                </span>
+                                                <span className="block-card-copy">
+                                                    <span className="block-card-title">{Text(block.Name)}</span>
+                                                    <span className="block-card-sub">
+                                                        {Text(block.Category + " · " + usage + (usage == 1 ? " use" : " uses"))}
+                                                    </span>
+                                                    <span className="block-card-desc">{Text(block.Description)}</span>
+                                                </span>
+                                                <span className="block-card-badge">
+                                                    {Text(block.Kind == "theme" ? "Theme" : "Content")}
+                                                </span>
+                                            </button>);
+                                    })}
+                            </div>)}
+
+                        <div className="dev-note">
+                            {Ui.Icon(Icons.Info)}
+                            <span>{Text("Drag a block from the sidebar onto a page or block canvas. Drop it into a section, or onto the page background to append it.")}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+}

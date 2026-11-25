@@ -1,0 +1,41 @@
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>One-field prompt used for page names, type names and renames.</summary>
+public sealed class PromptDialog : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        PromptRequest prompt = session.Prompt!;
+
+        return (
+            <div className="overlay is-center">
+                <div className="modal is-narrow" onClickEvent={e => e.StopPropagation()}>
+                    <div className="modal-head">
+                        <div className="modal-icon">{Ui.Icon(Icons.Edit)}</div>
+                        <div className="modal-titles">
+                            <div className="modal-title">{Text(prompt.Title)}</div>
+                            <div className="modal-sub">{Text(prompt.Label)}</div>
+                        </div>
+                    </div>
+
+                    <div className="modal-body">
+                        {Show(prompt.Multiline,
+                            Ui.TextArea(session, prompt.Value, value => prompt.Value = value, prompt.Placeholder, "large", 5))}
+                        {Show(!prompt.Multiline,
+                            Ui.Input(session, prompt.Value, value => prompt.Value = value, prompt.Placeholder, "large", live: true))}
+                    </div>
+
+                    <div className="modal-foot">
+                        {Ui.Button("Cancel", session.ClosePrompt, "ghost")}
+                        {Ui.Button(prompt.Confirm, () => session.SubmitPrompt(prompt.Value), "primary")}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+}

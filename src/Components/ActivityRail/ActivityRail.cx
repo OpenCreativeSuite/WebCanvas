@@ -1,0 +1,50 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>The compact primary navigation rail.</summary>
+public sealed class ActivityRail : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        List<Node> items = [];
+
+        foreach (StudioMode mode in ModeInfo.All)
+        {
+            bool active = session.ActiveMode == mode;
+            StudioMode target = mode;
+            items.Add(
+                <button className={active ? "rail-btn is-active" : "rail-btn"}
+                    title={ModeInfo.Hint(mode)}
+                    onClick={() => session.OpenMode(target)}>
+                    {Ui.Icon(ModeInfo.Icon(mode))}
+                    <span className="rail-label">{Text(ModeInfo.RailLabel(mode))}</span>
+                </button>);
+        }
+
+        return (
+            <nav className="rail">
+                {F(items.ToArray())}
+
+                <div className="rail-spacer" />
+                <div className="rail-sep" />
+
+                <button className="rail-btn" title="Search or run a command (Ctrl+K)" onClick={session.OpenPalette}>
+                    {Ui.Icon(Icons.Command)}
+                    <span className="rail-label">{Text("Search")}</span>
+                </button>
+
+                <button className="rail-btn"
+                    title={session.Dark ? "Light theme" : "Dark theme"}
+                    onClick={session.ToggleTheme}>
+                    {Ui.Icon(session.Dark ? Icons.Sun : Icons.Moon)}
+                    <span className="rail-label">{Text("Theme")}</span>
+                </button>
+            </nav>
+        );
+    }
+}

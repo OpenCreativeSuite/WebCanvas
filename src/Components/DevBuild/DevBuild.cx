@@ -1,0 +1,144 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>Build options, output and a readable console.</summary>
+public sealed class DevBuild : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        WcProject? project = session.Project;
+
+        if (project is null)
+        {
+            return <div className="dev-page">{Ui.Empty(Icons.Publish, "Nothing to build", "Open a project first.")}</div>;
+        }
+
+        BuildResult? result = session.BuildResult;
+
+        return (
+            <div className="dev-page">
+                <header className="dev-hero">
+                    <div className="dev-eyebrow">{Text("Development")}</div>
+                    <h1 className="dev-title">{Text("Build")}</h1>
+                    <p className="dev-lead">
+                        {Text("Write an ordinary static site: HTML, CSS, JSON, a small runtime, a search index and a sitemap. Copy it anywhere.")}
+                    </p>
+                    <div className="inline-actions">
+                        {Ui.Button("Build site", session.RunBuild, "primary", Icons.Publish)}
+                        {Show(result is not null && result.Success,
+                            Ui.Button("Open output", () => session.OpenFolder(result!.OutputPath), "secondary", Icons.FolderOpen, small: true))}
+                    </div>
+                </header>
+
+                {Show(result is not null, result is null ? null :
+                    <section className={result.Success ? "build-result is-success" : "build-result is-error"}>
+                        <div className="build-result-icon">{Ui.Icon(result.Success ? Icons.Success : Icons.Warning)}</div>
+                        <div className="build-result-copy">
+                            <div className="build-result-title">
+                                {Text(result.Success
+                                    ? "Built " + result.Pages + " pages in " + result.Milliseconds + " ms"
+                                    : "The build didn't finish")}
+                            </div>
+                            <div className="build-result-sub mono">{Text(result.OutputPath)}</div>
+                        </div>
+                        <div className="build-result-stats">
+                            <span>{Text(result.Entities + " records")}</span>
+                            <span>{Text(result.Assets + " assets")}</span>
+                            {Show(result.Warnings.Count > 0, <span className="badge tone-warning">{Text(result.Warnings.Count + " warnings")}</span>)}
+                        </div>
+                    </section>)}
+
+                <div className="build-columns">
+                    <section className="dev-section build-options">
+                        <div className="dev-section-head">
+                            <h2 className="dev-section-title">{Text("Options")}</h2>
+                        </div>
+
+                        <div className="option-row">
+                            <div className="option-copy">
+                                <div className="option-title">{Text("Pretty URLs")}</div>
+                                <div className="option-desc">{Text("Write /about/index.html instead of /about.html.")}</div>
+                            </div>
+                            {Ui.Toggle(session.BuildOptions.PrettyUrls, on => session.SetBuildOption(options => options.PrettyUrls = on))}
+                        </div>
+
+                        <div className="option-row">
+                            <div className="option-copy">
+                                <div className="option-title">{Text("Search index")}</div>
+                                <div className="option-desc">{Text("Publish search.json for pages and records.")}</div>
+                            </div>
+                            {Ui.Toggle(session.BuildOptions.SearchIndex, on => session.SetBuildOption(options => options.SearchIndex = on))}
+                        </div>
+
+                        <div className="option-row">
+                            <div className="option-copy">
+                                <div className="option-title">{Text("Copy assets")}</div>
+                                <div className="option-desc">{Text("Copy assets/ and plugin scripts into the site.")}</div>
+                            </div>
+                            {Ui.Toggle(session.BuildOptions.CopyAssets, on => session.SetBuildOption(options => options.CopyAssets = on))}
+                        </div>
+
+                        <div className="option-row">
+                            <div className="option-copy">
+                                <div className="option-title">{Text("Sitemap and robots")}</div>
+                                <div className="option-desc">{Text("Generate sitemap.xml and robots.txt.")}</div>
+                            </div>
+                            {Ui.Toggle(session.BuildOptions.Sitemap, on => session.SetBuildOption(options => options.Sitemap = on))}
+                        </div>
+
+                        <div className="divider-line" />
+
+                        {Ui.Field("Output folder",
+                            Ui.Input(session, session.BuildOptions.OutputFolder, value => session.SetBuildOption(options => options.OutputFolder = value), "build/site"),
+                            "Relative to the project folder, or an absolute path.")}
+
+                        <div className="dev-note">
+                            {Ui.Icon(Icons.Info)}
+                            <span>{Text("The folder is cleared before each build so no stale pages remain.")}</span>
+                        </div>
+                    </section>
+
+                    <section className="dev-section build-console-section">
+                        <div className="dev-section-head">
+                            <h2 className="dev-section-title">{Text("Console")}</h2>
+                            <span className="dev-section-note">{Text(session.BuildLog.Count + " lines")}</span>
+                        </div>
+
+                        {Show(session.BuildLog.Count == 0,
+                            <div className="build-console is-empty">
+                                {Text("Build output will appear here. The first build usually takes under a second.")}
+                            </div>)}
+
+                        {Show(session.BuildLog.Count > 0,
+                            <div className="build-console">
+                                {Each(session.BuildLog, line =>
+                                    <div className="console-line">
+                                        <span className="console-mark">›</span>
+                                        <span className="console-text">{Text(line)}</span>
+                                    </div>)}
+                            </div>)}
+                    </section>
+                </div>
+
+                {Show(result is not null && result.Warnings.Count > 0,
+                    <section className="dev-section is-last">
+                        <div className="dev-section-head">
+                            <h2 className="dev-section-title">{Text("Warnings")}</h2>
+                        </div>
+                        <div className="notice-list">
+                            {Each(result!.Warnings, warning =>
+                                <div className="notice-row">
+                                    {Ui.Icon(Icons.Warning)}
+                                    <span>{Text(warning)}</span>
+                                </div>)}
+                        </div>
+                    </section>)}
+            </div>
+        );
+    }
+}

@@ -1,0 +1,39 @@
+name: Unit tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: PixelDotNet.Tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Install CSX tool
+        run: dotnet tool install --global CSX.CliTool --version 1.0.1
+
+      - name: Transform CSX sources
+        run: csx build --configuration Release
+
+      - name: Restore
+        run: dotnet restore tests/PixelDotNet.Tests/PixelDotNet.Tests.csproj
+
+      - name: Test
+        run: >
+          dotnet test tests/PixelDotNet.Tests/PixelDotNet.Tests.csproj
+          --no-restore
+          --configuration Release
+          --logger "console;verbosity=normal"

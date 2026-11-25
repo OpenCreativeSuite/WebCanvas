@@ -1,0 +1,123 @@
+﻿using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>The first-run and no-project surface.</summary>
+public sealed class Welcome : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        List<Node> recent = [];
+
+        foreach (string path in session.RecentProjects.Take(4))
+        {
+            string projectPath = path;
+            recent.Add(
+                <button className="welcome-recent-row" title={projectPath} onClick={() => session.OpenProject(projectPath)}>
+                    {Ui.Icon(Icons.Folder)}
+                    <span className="welcome-recent-name">{Text(System.IO.Path.GetFileName(projectPath))}</span>
+                    <span className="welcome-recent-path">{Text(projectPath)}</span>
+                </button>);
+        }
+
+        return (
+            <main className="welcome">
+                <div className="welcome-inner">
+                    <section className="welcome-copy">
+                        <div className="welcome-eyebrow">
+                            <span className="brand-mark" />
+                            <span>{Text("WebCanvasDotNet")}</span>
+                        </div>
+
+                        <h1 className="welcome-title">{Text("The quiet way to build a website.")}</h1>
+                        <p className="welcome-lead">
+                            {Text("Design pages, model your content, and publish a fast static site from one calm desktop workspace. No account, no runtime to maintain.")}
+                        </p>
+
+                        <div className="welcome-actions">
+                            {Ui.Button("Create project", session.OpenCreateDialog, "primary", Icons.Plus)}
+                            {Ui.Button("Open project", session.BrowseForProject, "secondary", Icons.FolderOpen)}
+                        </div>
+
+                        <button className="welcome-sample" onClick={session.OpenSampleProject}>
+                            {Ui.Icon(Icons.Sparkles)}
+                            <span>{Text("Explore the Aster & Oak sample site")}</span>
+                            {Ui.Icon(Icons.Forward)}
+                        </button>
+
+                        {Show(session.ProjectError is not null,
+                            <div className="form-error">{Text(session.ProjectError ?? "")}</div>)}
+
+                        {Show(recent.Count > 0,
+                            <div>
+                                <div className="welcome-recent-title">{Text("Recent projects")}</div>
+                                <div className="welcome-recent">{F(recent.ToArray())}</div>
+                            </div>)}
+
+                        <div className="welcome-footnote">
+                            {Ui.Icon(Icons.Shield)}
+                            <span>{Text("Local-first. Your pages, content and data stay as readable files on your machine.")}</span>
+                        </div>
+                    </section>
+
+                    <aside className="welcome-art">
+                        <div className="welcome-preview-window">
+                            <div className="welcome-preview-bar">
+                                <span className="dot" />
+                                <span className="dot" />
+                                <span className="dot" />
+                                <span className="welcome-preview-address" />
+                            </div>
+                            <div className="welcome-preview-body">
+                                <div className="welcome-preview-site-head">
+                                    <div className="welcome-preview-logo">
+                                        <span className="welcome-preview-logo-mark" />
+                                        <span>{Text("Aster & Oak")}</span>
+                                    </div>
+                                    <div className="welcome-preview-nav">
+                                        <span />
+                                        <span />
+                                        <span />
+                                        <span />
+                                    </div>
+                                </div>
+
+                                <div className="welcome-preview-hero">
+                                    <div className="welcome-preview-kicker" />
+                                    <div className="welcome-preview-title-line" />
+                                    <div className="welcome-preview-title-line is-short" />
+                                    <div className="welcome-preview-copy-line" />
+                                    <div className="welcome-preview-copy-line is-short" />
+                                    <div className="welcome-preview-cta-row">
+                                        <span className="welcome-preview-cta" />
+                                        <span className="welcome-preview-cta is-ghost" />
+                                    </div>
+                                </div>
+
+                                <div className="welcome-preview-cards">
+                                    <div className="welcome-preview-card">
+                                        <div className="welcome-preview-card-thumb" />
+                                        <div className="welcome-preview-card-line" />
+                                    </div>
+                                    <div className="welcome-preview-card">
+                                        <div className="welcome-preview-card-thumb" />
+                                        <div className="welcome-preview-card-line" />
+                                    </div>
+                                    <div className="welcome-preview-card">
+                                        <div className="welcome-preview-card-thumb" />
+                                        <div className="welcome-preview-card-line" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </main>
+        );
+    }
+}
+

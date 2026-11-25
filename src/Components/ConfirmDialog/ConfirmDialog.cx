@@ -1,0 +1,36 @@
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>A deliberate confirmation for destructive operations.</summary>
+public sealed class ConfirmDialog : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        ConfirmRequest confirm = session.Confirm!;
+
+        return (
+            <div className="overlay is-center">
+                <div className="modal is-narrow" onClickEvent={e => e.StopPropagation()}>
+                    <div className="modal-head">
+                        <div className={confirm.Danger ? "modal-icon is-danger" : "modal-icon"}>
+                            {Ui.Icon(confirm.Danger ? Icons.Warning : Icons.Info)}
+                        </div>
+                        <div className="modal-titles">
+                            <div className="modal-title">{Text(confirm.Title)}</div>
+                            <div className="modal-sub">{Text(confirm.Message)}</div>
+                        </div>
+                    </div>
+
+                    <div className="modal-foot">
+                        {Show(confirm.ShowCancel, Ui.Button("Cancel", session.CloseConfirm, "ghost"))}
+                        {Ui.Button(confirm.Confirm, session.AcceptConfirm, confirm.Danger ? "danger" : "primary")}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+}

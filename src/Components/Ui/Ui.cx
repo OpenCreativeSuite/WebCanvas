@@ -1,0 +1,205 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab.HtmlHelper;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>Small composable controls shared by every workspace.</summary>
+public static class Ui
+{
+    public static Node Icon(string name, string extra = "", bool regular = false) =>
+        <i className={$"fa {(regular ? "fa-regular" : "fa-solid")} {name} {extra}".TrimEnd()} />;
+
+    public static Node Button(
+        string label,
+        Action onClick,
+        string kind = "secondary",
+        string? icon = null,
+        bool enabled = true,
+        bool small = false,
+        string? title = null)
+    {
+        List<string> classes = ["btn", kind];
+        if (small)
+        {
+            classes.Add("small");
+        }
+
+        return <button className={string.Join(' ', classes)}
+            title={title ?? label}
+            disabled={!enabled}
+            onClick={onClick}>
+            {Show(icon is not null, icon is null ? null : Icon(icon, "button-icon"))}
+            {Show(label.Length > 0, <span className="button-label">{Text(label)}</span>)}
+        </button>;
+    }
+
+    public static Node IconButton(
+        string icon,
+        string title,
+        Action onClick,
+        bool active = false,
+        bool enabled = true,
+        string extra = "",
+        bool regular = false) =>
+        <button className={$"icon-btn {extra}{(active ? " is-active" : "")}".TrimEnd()}
+            title={title}
+            disabled={!enabled}
+            onClick={onClick}>
+            {Icon(icon, "", regular)}
+            {Show(title.Length > 0, <span className="control-tip">{Text(title)}</span>)}
+        </button>;
+
+    public static Node Key(string keys) => <kbd className="kbd">{Text(keys)}</kbd>;
+
+    public static Node Badge(string label, string tone = "neutral") =>
+        <span className={$"badge tone-{tone}"}>{Text(label)}</span>;
+
+    public static Node Dot(bool on, string title = "") =>
+        <span className={on ? "dot is-on" : "dot"} title={title} />;
+
+    public static Node Input(
+        StudioSession session,
+        string value,
+        Action<string> commit,
+        string placeholder = "",
+        string className = "",
+        string type = "text",
+        bool live = false) =>
+        <input className={$"text-input {className}".TrimEnd()}
+            type={type}
+            value={value}
+            placeholder={placeholder}
+            onInput={live ? commit : null}
+            onChange={commit}
+            onFocus={() => session.IsTyping = true}
+            onBlur={() => session.IsTyping = false} />;
+
+    public static Node TextArea(
+        StudioSession session,
+        string value,
+        Action<string> commit,
+        string placeholder = "",
+        string className = "",
+        int rows = 4,
+        bool live = false) =>
+        <textarea className={$"text-input textarea {className}".TrimEnd()}
+            placeholder={placeholder}
+            attributes={new() { ["rows"] = rows.ToString() }}
+            onInput={live ? commit : null}
+            onChange={commit}
+            onFocus={() => session.IsTyping = true}
+            onBlur={() => session.IsTyping = false}>
+            {Text(value)}
+        </textarea>;
+
+    /// <summary>
+    /// A native select. The host reports the selected option's label, so the
+    /// helper maps the label back to the caller's value.
+    /// </summary>
+    public static Node Select(
+        StudioSession session,
+        IEnumerable<(string Value, string Label)> options,
+        string value,
+        Action<string> onSelect,
+        string className = "")
+    {
+        List<(string Value, string Label)> list = options.ToList();
+        List<Node> items = [];
+
+        foreach ((string optionValue, string optionLabel) in list)
+        {
+            items.Add(
+                <option value={optionValue}
+                    attributes={optionValue == value
+                        ? new Dictionary<string, string> { ["selected"] = "selected" }
+                        : null}>{Text(optionLabel)}</option>);
+        }
+
+        return <select className={$"select-input {className}".TrimEnd()}
+            onChange={label =>
+            {
+                (string Value, string Label) match = list.FirstOrDefault(item => item.Label == label);
+                onSelect(match.Label is null ? label : match.Value);
+            }}>
+            {F(items.ToArray())}
+        </select>;
+    }
+
+    public static Node Toggle(bool value, Action<bool> onChange, string label = "", string title = "") =>
+        <button className="toggle"
+            title={string.IsNullOrWhiteSpace(title) ? label : title}
+            onClick={() => onChange(!value)}>
+            <span className={value ? "switch is-on" : "switch"}>
+                <span className="switch-knob" />
+            </span>
+            {Show(label.Length > 0, <span className="toggle-label">{Text(label)}</span>)}
+        </button>;
+
+    public static Node Field(string label, Node control, string? hint = null, string className = "") =>
+        <div className={$"field {className}".TrimEnd()}>
+            <div className="field-label-row">
+                <span className="field-label">{Text(label)}</span>
+            </div>
+            {control}
+            {Show(hint is not null, <span className="field-hint">{Text(hint ?? "")}</span>)}
+        </div>;
+
+    public static Node Section(
+        StudioSession session,
+        string key,
+        string title,
+        Node? body,
+        string? subtitle = null,
+        string? action = null,
+        Action? onAction = null)
+    {
+        bool collapsed = session.IsCollapsed(key);
+
+        return <div className={collapsed ? "pane-section is-collapsed" : "pane-section"}>
+            <button className="pane-section-head" onClick={() => session.ToggleSection(key)}>
+                {Icon(collapsed ? Icons.ChevronRight : Icons.ChevronDown, "section-chevron")}
+                <span className="section-title">{Text(title)}</span>
+                {Show(!string.IsNullOrWhiteSpace(subtitle), <span className="section-subtitle">{Text(subtitle ?? "")}</span>)}
+                {Show(action is not null && onAction is not null,
+                    <span className="section-action" onClick={onAction}>
+                        {Icon(Icons.Plus)}
+                        {Text(action ?? "")}
+                    </span>)}
+            </button>
+            {Show(!collapsed, <div className="pane-section-body">{body}</div>)}
+        </div>;
+    }
+
+    public static Node Empty(
+        string icon,
+        string title,
+        string message,
+        Node? action = null,
+        string extra = "") =>
+        <div className={$"empty {extra}".TrimEnd()}>
+            <div className="empty-icon">{Icon(icon)}</div>
+            <div className="empty-title">{Text(title)}</div>
+            <div className="empty-copy">{Text(message)}</div>
+            {Show(action is not null, <div className="empty-action">{action}</div>)}
+        </div>;
+
+    public static Node Meta(string label, string value) =>
+        <div className="meta-pair">
+            <span className="meta-label">{Text(label)}</span>
+            <span className="meta-value">{Text(value)}</span>
+        </div>;
+
+    public static Node InlineActions(params Node?[] children) =>
+        <div className="inline-actions">{children}</div>;
+
+    public static Node Spacer(string className = "") =>
+        <div className={$"flex-spacer {className}".TrimEnd()} />;
+
+    public static Node Divider() => <div className="divider-line" />;
+
+    public static Node TextBlock(string text, string className = "") =>
+        <div className={className}>{Text(text)}</div>;
+}

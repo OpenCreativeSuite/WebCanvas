@@ -1,0 +1,44 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>VS Code-style document tabs for the open workspaces.</summary>
+public sealed class WorkTabs : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        List<Node> tabs = [];
+
+        foreach (WorkTab tab in session.Tabs)
+        {
+            bool active = tab.Id == session.ActiveTabId;
+            WorkTab captured = tab;
+            tabs.Add(
+                <div className={active ? "worktab is-active" : "worktab"} key={tab.Id}>
+                    <button className="tab-select"
+                        title={ModeInfo.Label(tab.Mode) + " · " + tab.Title}
+                        onClick={() => session.ActivateTab(captured.Id)}>
+                        {Ui.Icon(tab.Icon, "tab-icon")}
+                        <span className="tab-title">{Text(tab.Title)}</span>
+                    </button>
+                    <button className="tab-close" title="Close tab" onClick={() => session.CloseTab(captured.Id)}>
+                        {Ui.Icon(Icons.Close)}
+                    </button>
+                </div>);
+        }
+
+        return (
+            <div className="worktabs">
+                {F(tabs.ToArray())}
+                <div className="tab-scroll-fill" />
+                <button className="tab-add" title="Open a workspace" onClick={session.ToggleModeMenu}>
+                    {Ui.Icon(Icons.Plus)}
+                </button>
+            </div>
+        );
+    }
+}

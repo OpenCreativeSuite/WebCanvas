@@ -1,0 +1,39 @@
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>Non-intrusive notifications in the lower-right corner.</summary>
+public sealed class ToastStack : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+
+        return (
+            <div className="toast-stack">
+                {Each(session.Toasts, toast =>
+                {
+                    string icon = toast.Kind switch
+                    {
+                        "success" => Icons.Success,
+                        "warning" => Icons.Warning,
+                        "error" => Icons.Error,
+                        _ => Icons.Info,
+                    };
+
+                    Toast captured = toast;
+                    return (
+                        <div className={$"toast {toast.Kind}"}>
+                            {Ui.Icon(icon, "toast-icon")}
+                            <span className="toast-message">{Text(toast.Message)}</span>
+                            <button className="toast-close" title="Dismiss" onClick={() => session.Dismiss(captured)}>
+                                {Ui.Icon(Icons.Close)}
+                            </button>
+                        </div>);
+                })}
+            </div>
+        );
+    }
+}

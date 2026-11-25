@@ -1,0 +1,6 @@
+/* Destructive confirmation dialog. */
+
+.modal-icon.is-danger {
+    background-color: var(--danger-soft);
+    color: var(--danger);
+}

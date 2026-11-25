@@ -1,0 +1,55 @@
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>A compiled page rendered by the embedded browser (webview).</summary>
+public sealed class PreviewWorkspace : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        PageDoc? page = session.Project?.Page(session.ActiveTab?.ItemId);
+        var target = page is null ? null : session.PreviewTarget(page);
+        string url = target?.Url ?? "";
+        string address = target?.Address ?? "/";
+
+        return (
+            <div className="workspace preview-workspace">
+                <div className="mode-bar preview-bar">
+                    <div className="mode-bar-title">
+                        {Ui.Icon(Icons.Eye)}
+                        <span>{Text("Preview")}</span>
+                    </div>
+                    <div className="mode-bar-crumb">
+                        {Ui.Icon(Icons.ChevronRight)}
+                        <span>{Text(page?.Title ?? "Page")}</span>
+                    </div>
+                    <span className="preview-address mono">{Text(address)}</span>
+                    <span className="flex-spacer" />
+                    <div className="mode-bar-actions">
+                        {Ui.Button("Rebuild", () => session.PreviewPage(page!), "secondary", Icons.Refresh,
+                            small: true, title: "Build the site again and reload this preview")}
+                        <button className="icon-btn" title="Close preview" onClick={session.CloseActiveTab}>
+                            {Ui.Icon(Icons.Close)}
+                            <span className="control-tip">{Text("Close preview")}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div className="preview-body">
+                    {Show(url.Length > 0, <webview src={url} className="preview-frame" />)}
+                    {Show(url.Length == 0,
+                        <div className="preview-empty">
+                            <div className="empty-icon">{Ui.Icon(Icons.Eye)}</div>
+                            <div className="workspace-empty-title">{Text("Nothing to preview yet.")}</div>
+                            <div className="workspace-empty-copy">
+                                {Text("Build the site, then open a page preview from Design.")}
+                            </div>
+                        </div>)}
+                </div>
+            </div>
+        );
+    }
+}

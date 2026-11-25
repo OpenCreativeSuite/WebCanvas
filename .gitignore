@@ -1,0 +1,6 @@
+bin/
+obj/
+builds/
+build/
+preview-site/
+.idea

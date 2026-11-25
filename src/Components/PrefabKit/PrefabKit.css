@@ -1,0 +1,148 @@
+﻿/* Core header and footer prefab kit. */
+
+/* ------------------------------------------------------------ prefab kit */
+
+.prefab-kit {
+    margin: 22px 0 26px;
+}
+
+.prefab-kit-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.prefab-kit-title {
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.prefab-kit-hint {
+    color: var(--text-faint);
+    font-size: 9.5px;
+}
+
+.prefab-group {
+    margin-bottom: 14px;
+}
+
+.prefab-group-head {
+    margin-bottom: 6px;
+    color: var(--text-faint);
+    font-size: 8.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.prefab-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.prefab-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background-color: var(--bg-panel);
+    text-align: left;
+}
+
+.app button.prefab-card:enabled:hover {
+    border-color: var(--accent-line);
+    background-color: var(--accent-soft);
+}
+
+.prefab-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border-radius: 7px;
+    background-color: var(--accent-soft);
+    color: var(--accent);
+    font-size: 10px;
+}
+
+.prefab-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.prefab-name {
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.prefab-desc {
+    color: var(--text-faint);
+    font-size: 9.5px;
+    line-height: 1.35;
+}
+
+.prefab-kit.is-compact {
+    margin: 8px 0;
+}
+
+.prefab-kit.is-compact .prefab-kit-head {
+    margin-bottom: 4px;
+    padding: 0 6px;
+}
+
+.prefab-kit.is-compact .prefab-kit-title {
+    font-size: 9.5px;
+    color: var(--text-faint);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.prefab-kit.is-compact .prefab-kit-hint {
+    display: none;
+}
+
+.prefab-kit.is-compact .prefab-group {
+    margin-bottom: 5px;
+}
+
+.prefab-kit.is-compact .prefab-grid {
+    grid-template-columns: 1fr;
+    gap: 1px;
+}
+
+.prefab-kit.is-compact .prefab-card {
+    padding: 5px 6px;
+    border-color: transparent;
+    border-radius: 5px;
+    background-color: transparent;
+}
+
+.app button.prefab-kit.is-compact .prefab-card:enabled:hover {
+    background-color: var(--bg-hover);
+    border-color: transparent;
+}
+
+.prefab-kit.is-compact .prefab-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    background-color: transparent;
+    font-size: 8px;
+}
+
+.prefab-kit.is-compact .prefab-name {
+    font-size: 10px;
+    font-weight: 500;
+}
+

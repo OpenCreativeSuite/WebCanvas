@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../UI Framework/CSS-Engine/Donkeh/Build/Donkeh.props" />
+
+  <PropertyGroup>
+    <DonkehDesktop>true</DonkehDesktop>
+    <TargetFrameworks>$(DonkehTargetFrameworks)</TargetFrameworks>
+    <DonkehVersion>1.0.48</DonkehVersion>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>WebCanvasDotNet</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <DefaultItemExcludes>$(DefaultItemExcludes);builds/**;**/bin/**;**/obj/**</DefaultItemExcludes>
+    <!-- CSX generated files omit the nullable directive; their annotations are advisory. -->
+    <NoWarn>$(NoWarn);CS8669;CS8604</NoWarn>
+  </PropertyGroup>
+
+  <!-- Add Android or browser targets with:
+       donkeh enable-target android
+       donkeh enable-target web -->
+
+  <!-- Every [assembly: Stylesheet(...)] path must also be embedded here:
+       the attribute is metadata only, the loader reads the embedded copy. -->
+  <ItemGroup>
+    <EmbeddedResource Include="src/Styles/*.css" Watch="false" />
+    <EmbeddedResource Include="src/Components/**/*.css" Watch="false" />
+  </ItemGroup>
+
+  <!-- Icon fonts sit next to the executable so @font-face resolves at runtime. -->
+  <ItemGroup>
+    <Content Include="assets/fa-solid-900.ttf" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="assets/fa-regular-400.ttf" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="OpenCreativeSuite.Components.Files" Version="1.0.0" />
+  </ItemGroup>
+</Project>

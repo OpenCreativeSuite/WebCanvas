@@ -1,0 +1,363 @@
+﻿/* Late loaded global button hover normalisation and interface text scaling. */
+
+/* ---------------------------------------------------- button hover normalisation
+
+   The user-agent sheet styles `button:enabled:hover` with a light background.
+   Because that selector carries two pseudo-classes it can beat a component's
+   `:hover` rule. These prefixed rules make our controls win in both themes. */
+
+.app button.tab-select:enabled:hover,
+.app button.tab-select:enabled:active {
+    background-color: transparent;
+}
+
+.app button.tab-close:enabled:hover {
+    background-color: var(--bg-active);
+    color: var(--text);
+}
+
+.app button.tab-add:enabled:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.app button.btn:enabled:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--line-strong);
+}
+
+.app button.btn.primary:enabled:hover {
+    background-color: var(--accent-strong);
+    border-color: var(--accent-strong);
+}
+
+.app button.btn.ghost:enabled:hover {
+    background-color: var(--bg-hover);
+    border-color: transparent;
+}
+
+.app button.btn.danger:enabled:hover {
+    background-color: var(--danger-soft);
+    border-color: var(--danger);
+}
+
+.app button.icon-btn:enabled:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.app button.icon-btn.is-active:enabled:hover {
+    background-color: var(--accent-soft);
+    color: var(--accent);
+}
+
+.app button.icon-btn.is-danger:enabled:hover {
+    background-color: var(--danger-soft);
+    color: var(--danger);
+}
+
+.app button.rail-btn:enabled:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.app button.rail-btn.is-active:enabled:hover {
+    background-color: var(--accent-soft);
+    color: var(--accent);
+}
+
+.app button.side-row:enabled:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.app button.side-row.is-active:enabled:hover {
+    background-color: var(--bg-active);
+    color: var(--text);
+}
+
+.app button.entity-row:enabled:hover,
+.app button.handler-row:enabled:hover,
+.app button.agent-tool-row:enabled:hover,
+.app button.palette-row:enabled:hover,
+.app button.mode-menu-row:enabled:hover,
+.app button.welcome-recent-row:enabled:hover,
+.app button.add-block-row:enabled:hover,
+.app button.field-type-option:enabled:hover,
+.app button.rel-row:enabled:hover {
+    background-color: var(--bg-hover);
+}
+
+.app button.palette-row.is-active:enabled:hover {
+    background-color: var(--accent);
+}
+
+.app button.tree-main:enabled:hover {
+    background-color: transparent;
+}
+
+.app button.tree-twisty:enabled:hover {
+    background-color: transparent;
+    color: var(--text);
+}
+
+.app button.status-item:enabled:hover {
+    background-color: transparent;
+    color: var(--text);
+}
+
+.app button.zoom-value:enabled:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.app button.section-action:enabled:hover {
+    background-color: var(--bg-active);
+    color: var(--accent);
+}
+
+.app button.workspace-empty-mode:enabled:hover {
+    background-color: var(--accent-soft);
+    border-color: var(--accent-line);
+    color: var(--accent);
+}
+
+.app button.template-option:enabled:hover {
+    background-color: var(--bg-hover);
+}
+
+.app button.template-option.is-selected:enabled:hover {
+    background-color: var(--accent-soft);
+}
+
+.app button.window-btn:enabled:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.app button.window-btn.is-close:enabled:hover {
+    background-color: #c0362c;
+    color: #ffffff;
+}
+
+.app button.titlebar-tool:enabled:hover,
+.app button.toast-close:enabled:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.app button.project-pill:enabled:hover,
+.app button.command-trigger:enabled:hover {
+    background-color: var(--bg-panel);
+    border-color: var(--line-strong);
+    color: var(--text);
+}
+
+.app button.welcome-sample:enabled:hover {
+    background-color: transparent;
+    color: var(--accent);
+}
+
+/* ------------------------------------------------------- interface text scale */
+
+.app.is-text-large {
+    font-size: 13.5px;
+}
+
+.app.is-text-large .tab-title,
+.app.is-text-large .side-row,
+.app.is-text-large .tree-main,
+.app.is-text-large .mode-bar-title,
+.app.is-text-large .entity-row-title,
+.app.is-text-large .handler-row-title,
+.app.is-text-large .agent-tool-title,
+.app.is-text-large .palette-row,
+.app.is-text-large .mode-menu-row,
+.app.is-text-large .btn,
+.app.is-text-large .text-input,
+.app.is-text-large .select-input,
+.app.is-text-large .select-display,
+.app.is-text-large .picker-trigger,
+.app.is-text-large .field-label,
+.app.is-text-large .node-summary-title,
+.app.is-text-large .plugin-title,
+.app.is-text-large .rel-title {
+    font-size: 12.5px;
+}
+
+.app.is-text-large .btn,
+.app.is-text-large .text-input,
+.app.is-text-large .select-input,
+.app.is-text-large .picker-trigger {
+    height: 32px;
+}
+
+.app.is-text-large .side-row {
+    height: 35px;
+}
+
+.app.is-text-large .side-group-head,
+.app.is-text-large .inspector-title,
+.app.is-text-large .sidebar-title,
+.app.is-text-large .pane-section .section-title {
+    font-size: 11.5px;
+}
+
+.app.is-text-large .field-hint,
+.app.is-text-large .inspector-hint,
+.app.is-text-large .option-desc,
+.app.is-text-large .dev-lead,
+.app.is-text-large .side-note {
+    font-size: 11.5px;
+}
+
+.app.is-text-large .statusbar {
+    height: 26px;
+    gap: 10px;
+    padding: 0 8px;
+    font-size: 11px;
+}
+
+.app.is-text-large .status-group {
+    gap: 10px;
+}
+
+.app.is-text-large .badge {
+    font-size: 10px;
+}
+
+.app.is-text-large .rail {
+    width: 62px;
+}
+
+.app.is-text-large .rail-btn {
+    width: 52px;
+    height: 52px;
+}
+
+.app.is-text-large .rail-label {
+    font-size: 9.5px;
+}
+
+.app.is-text-large .entity-title-input {
+    font-size: 27px;
+}
+
+.app.is-text-large .entity-row-sub,
+.app.is-text-large .entity-row-time,
+.app.is-text-large .tab-close,
+.app.is-text-large .side-count {
+    font-size: 10.5px;
+}
+
+.app.is-text-large .dev-title {
+    font-size: 34px;
+}
+
+.app.is-text-large .dev-section-title {
+    font-size: 15px;
+}
+
+.app.is-text-large .inspector {
+    width: 324px;
+}
+
+.app.is-text-larger {
+    font-size: 14.5px;
+}
+
+.app.is-text-larger .tab-title,
+.app.is-text-larger .side-row,
+.app.is-text-larger .tree-main,
+.app.is-text-larger .mode-bar-title,
+.app.is-text-larger .entity-row-title,
+.app.is-text-larger .handler-row-title,
+.app.is-text-larger .agent-tool-title,
+.app.is-text-larger .palette-row,
+.app.is-text-larger .mode-menu-row,
+.app.is-text-larger .btn,
+.app.is-text-larger .text-input,
+.app.is-text-larger .select-input,
+.app.is-text-larger .select-display,
+.app.is-text-larger .picker-trigger,
+.app.is-text-larger .field-label,
+.app.is-text-larger .node-summary-title,
+.app.is-text-larger .plugin-title,
+.app.is-text-larger .rel-title {
+    font-size: 13.5px;
+}
+
+.app.is-text-larger .btn,
+.app.is-text-larger .text-input,
+.app.is-text-larger .select-input,
+.app.is-text-larger .picker-trigger {
+    height: 34px;
+}
+
+.app.is-text-larger .side-row {
+    height: 37px;
+}
+
+.app.is-text-larger .side-group-head,
+.app.is-text-larger .inspector-title,
+.app.is-text-larger .sidebar-title,
+.app.is-text-larger .pane-section .section-title {
+    font-size: 12.5px;
+}
+
+.app.is-text-larger .field-hint,
+.app.is-text-larger .inspector-hint,
+.app.is-text-larger .option-desc,
+.app.is-text-larger .dev-lead,
+.app.is-text-larger .side-note {
+    font-size: 12.5px;
+}
+
+.app.is-text-larger .statusbar {
+    height: 28px;
+    gap: 10px;
+    padding: 0 8px;
+    font-size: 11.5px;
+}
+
+.app.is-text-larger .status-group {
+    gap: 10px;
+}
+
+.app.is-text-larger .badge {
+    font-size: 10.5px;
+}
+
+.app.is-text-larger .rail {
+    width: 66px;
+}
+
+.app.is-text-larger .rail-btn {
+    width: 56px;
+    height: 56px;
+}
+
+.app.is-text-larger .rail-label {
+    font-size: 10px;
+}
+
+.app.is-text-larger .entity-title-input {
+    font-size: 29px;
+}
+
+.app.is-text-larger .inspector {
+    width: 336px;
+}
+
+.app.is-text-larger .sidebar {
+    width: 272px;
+}
+
+
+
+/* Global themed fallback for any button that does not define its own hover. */
+.app button:enabled:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+

@@ -1,0 +1,57 @@
+﻿/* Bottom status bar. */
+
+/* -------------------------------------------------------------- statusbar */
+
+.statusbar {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    height: 24px;
+    padding: 0 10px;
+    gap: 14px;
+    background-color: var(--bg-sidebar);
+    border-top: 1px solid var(--line);
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.status-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.status-group.is-right {
+    margin-left: auto;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.status-item .fa {
+    font-size: 9px;
+    color: var(--text-faint);
+}
+
+.status-item.is-accent .fa,
+.status-item.is-accent {
+    color: var(--accent);
+}
+
+.status-item.is-clickable:hover {
+    color: var(--text);
+}
+
+.status-sep {
+    width: 1px;
+    height: 12px;
+    background-color: var(--line);
+}
+

@@ -1,0 +1,95 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>Installed plugin packages and their declared capabilities.</summary>
+public sealed class DevPlugins : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        WcProject? project = session.Project;
+
+        if (project is null)
+        {
+            return <div className="dev-page">{Ui.Empty(Icons.Puzzle, "No plugins", "Open a project to see its plugins.")}</div>;
+        }
+
+        List<Node> rows = [];
+
+        foreach (PluginInfo plugin in project.Plugins)
+        {
+            PluginInfo captured = plugin;
+            List<Node> chips = [];
+
+            foreach (string capability in plugin.Capabilities)
+            {
+                chips.Add(<span className="chip">{Text(capability)}</span>);
+            }
+
+            rows.Add(
+                <div className="plugin-row">
+                    <div className="plugin-mark">{Ui.Icon(Icons.Puzzle)}</div>
+                    <div className="plugin-copy">
+                        <div className="plugin-title-row">
+                            <span className="plugin-title">{Text(plugin.Name)}</span>
+                            <span className="badge">{Text("v" + plugin.Version)}</span>
+                            {Show(plugin.HasComponentFolder, <span className="badge tone-accent">{Text("Components")}</span>)}
+                            {Show(plugin.HasScriptFolder, <span className="badge tone-accent">{Text("Scripts")}</span>)}
+                        </div>
+                        <div className="plugin-sub">{Text(plugin.Vendor + " · " + session.RelativePath(plugin.Path))}</div>
+                        <div className="plugin-desc">{Text(plugin.Description)}</div>
+                        {Show(chips.Count > 0, <div className="chips plugin-chips">{F(chips.ToArray())}</div>)}
+                    </div>
+                    <div className="plugin-actions">
+                        {Ui.IconButton(Icons.FolderOpen, "Open plugin folder", () => session.OpenFolder(captured.Path))}
+                    </div>
+                </div>);
+        }
+
+        return (
+            <div className="dev-page">
+                <header className="dev-hero">
+                    <div className="dev-eyebrow">{Text("Development")}</div>
+                    <h1 className="dev-title">{Text("Plugins")}</h1>
+                    <p className="dev-lead">
+                        {Text("Packages under app/code can add components, scripts and styles. Each one declares what it offers in plugin.json.")}
+                    </p>
+                    <div className="inline-actions">
+                        {Ui.Button("Add example plugin", session.AddExamplePlugin, "secondary", Icons.Plus, small: true)}
+                        {Ui.Button("Open code folder", () => session.OpenFolder(project.CodeFolder), "ghost", Icons.FolderOpen, small: true)}
+                    </div>
+                </header>
+
+                {Show(rows.Count == 0,
+                    <section className="dev-section">
+                        {Ui.Empty(Icons.Puzzle,
+                            "No plugins installed",
+                            "Plugins are optional. Add the example SEO Toolkit to see the folder shape and manifest.",
+                            Ui.Button("Add example plugin", session.AddExamplePlugin, "secondary", Icons.Plus))}
+                    </section>)}
+
+                {Show(rows.Count > 0,
+                    <section className="dev-section">
+                        <div className="dev-section-head">
+                            <h2 className="dev-section-title">{Text("Installed")}</h2>
+                            <span className="dev-section-note">{Text(project.Plugins.Count.ToString())}</span>
+                        </div>
+                        <div className="plugin-list">{F(rows.ToArray())}</div>
+                    </section>)}
+
+                <section className="dev-section is-quiet">
+                    <div className="folder-map">
+                        <div className="folder-row"><span className="mono">plugin.json</span><span>{Text("Name, vendor, version, entry and capabilities")}</span></div>
+                        <div className="folder-row"><span className="mono">Components/</span><span>{Text("Optional .cx components")}</span></div>
+                        <div className="folder-row"><span className="mono">Scripts/</span><span>{Text("Optional build-time or page scripts")}</span></div>
+                        <div className="folder-row"><span className="mono">Styles/</span><span>{Text("Styles appended after the site theme on build")}</span></div>
+                    </div>
+                </section>
+            </div>
+        );
+    }
+}

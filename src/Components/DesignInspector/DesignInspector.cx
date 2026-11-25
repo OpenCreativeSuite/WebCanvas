@@ -1,0 +1,546 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>The contextual right inspector for the design canvas.</summary>
+public sealed class DesignInspector : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        PageDoc? page = session.CurrentPage;
+        PageNode? node = session.CurrentNode;
+
+        return (
+            <aside className="inspector">
+                <div className="inspector-head">
+                    <span className="inspector-title">{Text(session.IsEditingBlock ? "Block" : node is null ? "Page" : "Selection")}</span>
+                    {Show(node is not null, node is null ? null : <span className="badge tone-accent">{Text(node.Tag)}</span>)}
+                    {Ui.IconButton(Icons.ChevronRight, "Hide inspector (Ctrl+Shift+I)", session.ToggleInspector)}
+                </div>
+
+                <div className="inspector-body">
+                    {Show(page is null,
+                        <div className="inspector-pad">
+                            {Ui.Empty(Icons.File, "No page selected", "Choose a page from the sidebar to begin.")}
+                        </div>)}
+
+                    {Show(session.IsEditingBlock && node is null, session.CurrentBlock is null ? null : BlockSettings(session, session.CurrentBlock))}
+                    {Show(!session.IsEditingBlock && page is not null && node is null, page is null ? null : PageSettings(session, page))}
+                    {Show(page is not null && node is not null, page is null || node is null ? null : NodeSettings(session, page, node))}
+                </div>
+            </aside>
+        );
+    }
+
+    // ------------------------------------------------------------ block view
+
+    private static Node BlockSettings(StudioSession session, BlockDoc block)
+    {
+        List<PageDoc> pages = session.PagesUsing(block);
+        List<Node> usage = [];
+
+        foreach (PageDoc page in pages)
+        {
+            PageDoc captured = page;
+            usage.Add(
+                <button className="rel-row" onClick={() => session.SelectPage(captured.Id)}>
+                    <span className="rel-icon">{Ui.Icon(Icons.File)}</span>
+                    <span className="rel-copy">
+                        <span className="rel-title">{Text(page.Title)}</span>
+                        <span className="rel-sub">{Text(page.IsHome ? "/" : "/" + page.Slug + "/")}</span>
+                    </span>
+                    {Ui.Icon(Icons.ChevronRight, "rel-chevron")}
+                </button>);
+        }
+
+        return (
+            <div>
+                <div className="inspector-pad">
+                    <div className="node-summary">
+                        <div className="node-summary-icon">{Ui.Icon(block.Kind == "theme" ? Icons.Palette : Icons.Cube)}</div>
+                        <div className="node-summary-copy">
+                            <div className="node-summary-title">{Text(block.Name)}</div>
+                            <div className="node-summary-sub">{Text((block.Kind == "theme" ? "Theme" : "Content") + " · " + block.Category)}</div>
+                        </div>
+                    </div>
+                    <div className="inline-actions">
+                        {Ui.Button("New block", session.NewBlock, "secondary", Icons.Plus, small: true)}
+                        {Ui.Button("Delete", () => session.DeleteBlock(block), "ghost", Icons.Delete, small: true)}
+                    </div>
+                </div>
+
+                {Ui.Section(session, "block-basics", "Block",
+                    <div>
+                        {Ui.Field("Name",
+                            Ui.Input(session, block.Name, value => session.SetBlockMeta(block, target => target.Name = value), "Block name", live: true))}
+                        {Ui.Field("Description",
+                            Ui.TextArea(session, block.Description, value => session.SetBlockMeta(block, target => target.Description = value), "What is this block for?", rows: 3, live: true))}
+                        <div className="field">
+                            <span className="field-label">{Text("Kind")}</span>
+                            <div className="kind-options">
+                                <button className={block.Kind == "theme" ? "kind-btn is-active" : "kind-btn"}
+                                    onClick={() => session.SetBlockMeta(block, target => target.Kind = "theme")}>
+                                    {Ui.Icon(Icons.Palette)}
+                                    {Text("Theme")}
+                                </button>
+                                <button className={block.Kind == "content" ? "kind-btn is-active" : "kind-btn"}
+                                    onClick={() => session.SetBlockMeta(block, target => target.Kind = "content")}>
+                                    {Ui.Icon(Icons.Cube)}
+                                    {Text("Content")}
+                                </button>
+                            </div>
+                            <span className="field-hint">{Text("Theme blocks are header, footer and layout chrome. Content blocks are the material inside pages.")}</span>
+                        </div>
+                        {Ui.Field("Category",
+                            Ui.Input(session, block.Category, value => session.SetBlockMeta(block, target => target.Category = value), "Hero, Section, Call to action…", live: true))}
+                    </div>,
+                    subtitle: "Reusable")}
+
+                {Ui.Section(session, "block-usage", "Used on",
+                    <div>
+                        {Show(usage.Count == 0,
+                            <div className="inspector-hint">{Text("This block isn't on a page yet. Add it from a page's Add block menu.")}</div>)}
+                        {F(usage.ToArray())}
+                    </div>,
+                    subtitle: pages.Count.ToString())}
+
+                <div className="inspector-note">
+                    {Text("Edits here update every page that uses this block. Select a layer to change its content and layout.")}
+                </div>
+            </div>
+        );
+    }
+
+    private static Node BlockReferenceSettings(StudioSession session, PageNode node)
+    {
+        string blockId = Attr(node, "block");
+        BlockDoc? block = session.Project?.Block(blockId);
+        List<(string Value, string Label)> options = (session.Project?.Blocks ?? [])
+            .Select(candidate => (candidate.Id, candidate.Name))
+            .ToList();
+
+        return (
+            <div>
+                <div className="inspector-pad">
+                    <div className="node-summary">
+                        <div className="node-summary-icon">{Ui.Icon(Icons.Cube)}</div>
+                        <div className="node-summary-copy">
+                            <div className="node-summary-title">{Text(block?.Name ?? "Missing block")}</div>
+                            <div className="node-summary-sub">{Text(block is null ? "The referenced block no longer exists." : (block.Kind == "theme" ? "Theme" : "Content") + " · " + block.Category)}</div>
+                        </div>
+                    </div>
+                    <div className="inline-actions">
+                        {Show(block is not null,
+                            Ui.Button("Edit block", () => session.OpenBlock(block!), "secondary", Icons.Edit, small: true))}
+                        {Ui.Button("Remove", session.DeleteNode, "ghost", Icons.Delete, small: true)}
+                    </div>
+                </div>
+
+                {Ui.Section(session, "block-ref", "Reference",
+                    <div>
+                        {Ui.Field("Block", Ui.Select(session, options, blockId, value => session.SetNodeAttr("block", value)))}
+                        {Show(block is not null, block is null ? null :
+                            <div>
+                                {Ui.Field("Description",
+                                    Ui.TextArea(session, block.Description,
+                                        value => session.SetBlockMeta(block, target => target.Description = value),
+                                        "Describe the block.", rows: 3, live: true))}
+                                {Ui.Meta("Kind", block.Kind == "theme" ? "Theme" : "Content")}
+                                {Ui.Meta("Category", block.Category)}
+                                {Ui.Meta("Uses", session.BlockUsageCount(block) + (session.BlockUsageCount(block) == 1 ? " instance" : " instances"))}
+                            </div>)}
+                    </div>)}
+
+                <div className="inspector-note">
+                    {Text("A block instance keeps one definition in sync across pages. Edit the block to change every instance.")}
+                </div>
+            </div>
+        );
+    }
+
+    // ------------------------------------------------------------- page view
+
+    private static Node PageSettings(StudioSession session, PageDoc page)
+    {
+        DataSchema? templateFor = session.Project?.Schemas
+            .FirstOrDefault(schema => schema.DetailPageId == page.Id);
+
+        return (
+            <div>
+                <div className="inspector-pad">
+                    <div className="inspector-page-title">{Text(page.Title)}</div>
+                    <div className="inspector-page-address mono">
+                        {Text(templateFor is not null
+                            ? "/" + Ids.Slug(templateFor.Plural) + (templateFor.HasSlugField ? "/{slug}" : "/{id}")
+                            : page.IsHome ? "/" : "/" + page.Slug + "/")}
+                    </div>
+                    {Show(templateFor is not null,
+                        <div className="inspector-note">
+                            {Text("This page is the route template for " + (templateFor?.Name ?? "entity") + " records. It is not published at its own address.")}
+                        </div>)}
+                    <div className="inline-actions">
+                        {Ui.Button("New page", session.NewPage, "secondary", Icons.Plus, small: true)}
+                        {Ui.Button("Delete", () => session.DeletePage(page), "ghost", Icons.Delete, small: true)}
+                    </div>
+                </div>
+
+                {Ui.Section(session, "page-content", "Page",
+                    <div>
+                        {Ui.Field("Title",
+                            Ui.Input(session, page.Title, value => session.SetPageMeta(page, target => target.Title = value), "Page title", live: true))}
+                        {Ui.Field("Address",
+                            <div className="prefix-row">
+                                <span className="prefix mono">{Text("/")}</span>
+                                {Ui.Input(session, page.Slug, value => session.SetPageSlug(page, value), "about")}
+                            </div>,
+                            page.IsHome ? "The home page keeps an empty address." : "Lowercase words joined with hyphens.")}
+                        {Ui.Field("Description",
+                            Ui.TextArea(session, page.Description, value => session.SetPageMeta(page, target => target.Description = value), "A short description for search and link previews.", rows: 3, live: true))}
+                    </div>)}
+
+                {Ui.Section(session, "page-nav", "Navigation",
+                    <div>
+                        <div className="inspector-row">
+                            <span className="inspector-row-label">{Text("Show in navigation")}</span>
+                            {Ui.Toggle(page.ShowInNav, value => session.SetPageMeta(page, target => target.ShowInNav = value))}
+                        </div>
+                        {Ui.Field("Menu label",
+                            Ui.Input(session, page.NavLabel, value => session.SetPageMeta(page, target => target.NavLabel = value), page.Title, live: true),
+                            "Leave empty to use the page title.")}
+                    </div>)}
+
+                {Ui.Section(session, "page-stats", "This page",
+                    <div>
+                        {Ui.Meta("Blocks", page.Walk().Count().ToString())}
+                        {Ui.Meta("Top-level", page.Nodes.Count.ToString())}
+                        {Ui.Meta("Output", session.Project is null ? page.OutputPath : session.RelativePath(System.IO.Path.Combine(session.Project.Root, page.OutputPath)))}
+                    </div>)}
+
+                <div className="inspector-note">
+                    {Text("Select a block on the canvas to edit its content, layout and type.")}
+                </div>
+            </div>
+        );
+    }
+
+    // ------------------------------------------------------------- node view
+
+    private static Node NodeSettings(StudioSession session, PageDoc page, PageNode node)
+    {
+        if (node.Tag == "block")
+        {
+            return BlockReferenceSettings(session, node);
+        }
+
+        bool textNode = node.Tag.ToLowerInvariant() is
+            "h1" or "h2" or "h3" or "h4" or "h5" or "h6" or "p" or "span" or "a" or "button" or "li"
+            or "blockquote" or "cite" or "label" or "strong" or "em" or "small" or "code" or "pre";
+        bool isImage = node.Tag == "img";
+        bool isEmbed = node.Tag is "iframe" or "video";
+        bool isCollection = node.Tag == "collection";
+        bool isLink = node.Tag is "a" or "button";
+
+        return (
+            <div>
+                <div className="inspector-pad">
+                    <div className="node-summary">
+                        <div className="node-summary-icon">{Ui.Icon(Icons.ForTag(node.Tag))}</div>
+                        <div className="node-summary-copy">
+                            <div className="node-summary-title">{Text(node.DisplayName())}</div>
+                            <div className="node-summary-sub">{Text(node.HasChildren ? node.Children!.Count + " children" : "No children")}</div>
+                        </div>
+                    </div>
+
+                    <div className="inline-actions">
+                        {Ui.IconButton(Icons.Up, "Move up", () => session.MoveNode(-1))}
+                        {Ui.IconButton(Icons.Down, "Move down", () => session.MoveNode(1))}
+                        {Ui.IconButton(Icons.Copy, "Duplicate (Ctrl+D)", session.DuplicateNode)}
+                        {Ui.IconButton(Icons.ChevronRight, "Indent into the block above", session.IndentNode)}
+                        {Ui.IconButton(Icons.ChevronLeft, "Outdent", session.OutdentNode)}
+                        {Ui.IconButton(Icons.Back, "Select parent", session.SelectParentNode)}
+                        <span className="flex-spacer" />
+                        {Ui.IconButton(Icons.Cube, "Save as a reusable block", session.CreateBlockFromSelection)}
+                        {Ui.IconButton(Icons.Delete, "Delete block (Del)", session.DeleteNode, extra: "is-danger")}
+                    </div>
+                </div>
+
+                {Ui.Section(session, "node-content", "Content",
+                    <div>
+                        {Show(textNode,
+                            Ui.Field("Text",
+                                Ui.TextArea(session, node.Text ?? "", session.SetNodeText, "Write the text…", rows: 5, live: true)))}
+
+                        {Show(isImage,
+                            <div>
+                                {Ui.Field("Source",
+                                    Ui.Input(session, Attr(node, "src"), value => session.SetNodeAttr("src", value), "assets/image.jpg", live: true))}
+                                {Ui.Field("Alternative text",
+                                    Ui.Input(session, Attr(node, "alt"), value => session.SetNodeAttr("alt", value), "Describe the image", live: true))}
+                            </div>)}
+
+                        {Show(isLink && !isImage,
+                            Ui.Field("Link",
+                                Ui.Input(session, Attr(node, "href"), value => session.SetNodeAttr("href", value), "/contact/", live: true),
+                                "Use / for site pages, or a full URL for external links."))}
+
+                        {Show(isEmbed,
+                            <div>
+                                {Ui.Field("Source",
+                                    Ui.Input(session, Attr(node, "src"), value => session.SetNodeAttr("src", value),
+                                        "https://www.youtube.com/embed/...", live: true),
+                                    "Use an embed URL. YouTube links look like youtube.com/embed/VIDEO_ID.")}
+                                {Ui.Field("Title",
+                                    Ui.Input(session, Attr(node, "title"), value => session.SetNodeAttr("title", value),
+                                        "Embedded content", live: true))}
+                            </div>)}
+
+                        {Show(isCollection,
+                            <div>
+                                {Ui.Field("Data type",
+                                    Ui.Select(session,
+                                        (session.Project?.Schemas ?? []).Select(schema => (schema.Name, schema.Name)),
+                                        CollectionType(node),
+                                        session.SetCollectionTarget))}
+                                {Ui.Field("Limit",
+                                    Ui.Input(session, Attr(node, "limit"), value => session.SetNodeAttr("limit", value), "3", live: true))}
+                                <div className="inspector-hint">{Text("Records are ordered automatically and published with the page.")}</div>
+                            </div>)}
+
+                        {Show(!textNode && !isImage && !isEmbed && !isLink && !isCollection,
+                            <div className="inspector-hint">{Text("This block is a container. Add a heading, text or another block inside it.")}</div>)}
+                    </div>)}
+
+                {Show(node.HasChildren,
+                    Ui.Section(session, "node-children", "Inside",
+                        <div className="node-child-list">
+                            {Each(node.Children ?? new List<PageNode>(), child => ChildRow(session, child))}
+                        </div>,
+                        subtitle: (node.Children?.Count ?? 0).ToString()))}
+
+                {Ui.Section(session, "node-layout", "Layout",
+                    <div>
+                        <div className="form-grid">
+                            {Ui.Field("Display",
+                                StyleSelect(session, node, "display", "", new[]
+                                {
+                                    ("", "Default"), ("block", "Block"), ("flex", "Flex"), ("grid", "Grid"), ("none", "Hidden"),
+                                }))}
+                            {Ui.Field("Direction",
+                                StyleSelect(session, node, "flex-direction", "", new[]
+                                {
+                                    ("", "Default"), ("row", "Row"), ("column", "Column"), ("row-reverse", "Row reverse"), ("column-reverse", "Column reverse"),
+                                }))}
+                        </div>
+
+                        <div className="form-grid">
+                            {Ui.Field("Gap", StyleInput(session, node, "gap", "0px"))}
+                            {Ui.Field("Padding", StyleInput(session, node, "padding", "0px"))}
+                        </div>
+
+                        <div className="form-grid">
+                            {Ui.Field("Align items",
+                                StyleSelect(session, node, "align-items", "", new[]
+                                {
+                                    ("", "Default"), ("flex-start", "Start"), ("center", "Center"), ("flex-end", "End"), ("stretch", "Stretch"),
+                                }))}
+                            {Ui.Field("Justify",
+                                StyleSelect(session, node, "justify-content", "", new[]
+                                {
+                                    ("", "Default"), ("flex-start", "Start"), ("center", "Center"), ("flex-end", "End"), ("space-between", "Between"),
+                                }))}
+                        </div>
+
+                        <div className="form-grid">
+                            {Ui.Field("Width", StyleInput(session, node, "width", "auto"))}
+                            {Ui.Field("Max width", StyleInput(session, node, "max-width", "none"))}
+                        </div>
+
+                        <div className="form-grid">
+                            {Ui.Field("Margin", StyleInput(session, node, "margin", "0px"))}
+                            {Ui.Field("Radius", StyleInput(session, node, "border-radius", "0px"))}
+                        </div>
+                    </div>)}
+
+                {Ui.Section(session, "node-type", "Typography",
+                    <div>
+                        <div className="form-grid">
+                            {Ui.Field("Size", StyleInput(session, node, "font-size", "16px"))}
+                            {Ui.Field("Weight",
+                                StyleSelect(session, node, "font-weight", "", new[]
+                                {
+                                    ("", "Default"), ("300", "Light"), ("400", "Regular"), ("500", "Medium"), ("600", "Semibold"), ("700", "Bold"),
+                                }))}
+                        </div>
+
+                        <div className="form-grid">
+                            {Ui.Field("Line height", StyleInput(session, node, "line-height", "1.5"))}
+                            {Ui.Field("Letter spacing", StyleInput(session, node, "letter-spacing", "0px"))}
+                        </div>
+
+                        {Ui.Field("Colour", ColorInput(session, node, "color", "#1d2a22"))}
+
+                        <div className="inspector-row">
+                            <span className="inspector-row-label">{Text("Align")}</span>
+                            <div className="inline-actions">
+                                {Ui.IconButton(Icons.AlignLeft, "Align left", () => session.SetNodeStyle("text-align", "left"), Style(node, "text-align") == "left")}
+                                {Ui.IconButton(Icons.Columns, "Align centre", () => session.SetNodeStyle("text-align", "center"), Style(node, "text-align") == "center")}
+                                {Ui.IconButton(Icons.List, "Align right", () => session.SetNodeStyle("text-align", "right"), Style(node, "text-align") == "right")}
+                            </div>
+                        </div>
+                    </div>)}
+
+                {Ui.Section(session, "node-appearance", "Appearance",
+                    <div>
+                        {Ui.Field("Background", ColorInput(session, node, "background-color", "#ffffff"))}
+                        {Ui.Field("Border", StyleInput(session, node, "border", "1px solid #e2ded3"))}
+                        {Ui.Field("Opacity", StyleInput(session, node, "opacity", "1"))}
+                    </div>)}
+
+                {Ui.Section(session, "node-advanced", "Advanced",
+                    <div>
+                        {Ui.Field("Element", Ui.Input(session, node.Tag, session.SetNodeTag, "div"))}
+                        {Ui.Field("Class names", Ui.Input(session, node.ClassName ?? "", session.SetNodeClassName, "site-section my-class"))}
+                        {Ui.Field("Manual CSS",
+                            Ui.TextArea(session, StyleSheetText(node), session.SetNodeStyleSheet,
+                                "background-color: #ffffff;\npadding: 16px;", rows: 5),
+                            "Applied to this element when you leave the field.")}
+                    </div>)}
+
+                <div className="inspector-note">
+                    {Text("Changes are saved as you go. Undo with Ctrl+Z.")}
+                </div>
+            </div>
+        );
+    }
+
+    private static Node ColorInput(StudioSession session, PageNode node, string property, string fallback)
+    {
+        string value = ColorHex(Style(node, property), fallback);
+
+        return (
+            <div className="color-row">
+                <input className="color-picker" type="color" value={value}
+                    onInput={selected => session.SetNodeStyle(property, selected)}
+                    onChange={selected => session.SetNodeStyle(property, selected)} />
+                <span className="color-hex mono">{Text(value)}</span>
+            </div>);
+    }
+
+    private static string ColorHex(string value, string fallback)
+    {
+        string trimmed = value.Trim();
+
+        if (trimmed.StartsWith("#", StringComparison.Ordinal))
+        {
+            if (trimmed.Length == 4)
+            {
+                return "#" + trimmed[1] + trimmed[1] + trimmed[2] + trimmed[2] + trimmed[3] + trimmed[3];
+            }
+
+            if (trimmed.Length == 7)
+            {
+                return trimmed;
+            }
+
+            if (trimmed.Length == 9)
+            {
+                return trimmed[..7];
+            }
+        }
+
+        return fallback;
+    }
+
+    private static string StyleSheetText(PageNode node) =>
+        node.Style is null || node.Style.Count == 0
+            ? ""
+            : string.Join("\n", node.Style.Select(pair => pair.Key + ": " + pair.Value + ";"));
+
+    private static Node StyleInput(StudioSession session, PageNode node, string property, string placeholder) =>
+        Ui.Input(session, Style(node, property), value => session.SetNodeStyle(property, value), placeholder, live: true);
+
+    private static Node StyleSelect(
+        StudioSession session,
+        PageNode node,
+        string property,
+        string fallback,
+        IEnumerable<(string Value, string Label)> options) =>
+        Ui.Select(session, options, Style(node, property) is { Length: > 0 } value ? value : fallback,
+            selected => session.SetNodeStyle(property, selected == "" ? null : selected));
+
+    private static string Style(PageNode node, string property) =>
+        node.Style is not null && node.Style.TryGetValue(property, out string? value) ? value : "";
+
+    private static string Attr(PageNode node, string key) =>
+        node.Attrs is not null && node.Attrs.TryGetValue(key, out string? value) ? value : "";
+
+    private static string CollectionType(PageNode node)
+    {
+        string value = Attr(node, "type");
+        return value.Length > 0 ? value : "Post";
+    }
+
+    private static Node ChildRow(StudioSession session, PageNode child)
+    {
+        PageNode captured = child;
+
+        return (
+            <div className="node-child-row">
+                <button className="node-child-main" onClick={() => session.SelectNode(captured.Id)}>
+                    {Ui.Icon(child.Tag == "block" ? Icons.Cube : Icons.ForTag(child.Tag), "tree-icon")}
+                    <span className="node-child-label">{Text(ChildLabel(session, child))}</span>
+                    {Show(child.Tag == "block", <span className="tree-badge">{Text("Block")}</span>)}
+                </button>
+                <button className="icon-btn is-danger" title="Delete this item"
+                    onClick={() =>
+                    {
+                        session.SelectNode(captured.Id);
+                        session.DeleteNode();
+                    }}>
+                    {Ui.Icon(Icons.Delete)}
+                    <span className="control-tip">{Text("Delete this item")}</span>
+                </button>
+            </div>);
+    }
+
+    private static string ChildLabel(StudioSession session, PageNode node)
+    {
+        if (node.Tag == "block"
+            && node.Attrs is not null
+            && node.Attrs.TryGetValue("block", out string? id)
+            && session.Project?.Block(id) is { } block)
+        {
+            return block.Name;
+        }
+
+        if (!string.IsNullOrWhiteSpace(node.ClassName))
+        {
+            foreach (string token in node.ClassName!.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (token == "wc-node" || token.StartsWith("is-", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                string[] parts = token.Split(['-', '_'], StringSplitOptions.RemoveEmptyEntries);
+                var words = new List<string>();
+
+                foreach (string part in parts.Take(3))
+                {
+                    words.Add(char.ToUpperInvariant(part[0]) + part[1..]);
+                }
+
+                if (words.Count > 0)
+                {
+                    return string.Join(' ', words);
+                }
+            }
+        }
+
+        return node.DisplayName();
+    }
+}

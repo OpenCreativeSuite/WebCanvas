@@ -1,0 +1,71 @@
+﻿/* Generated API catalogue. */
+
+/* api */
+
+.api-table {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+}
+
+.api-head,
+.api-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 12px;
+    font-size: 10px;
+}
+
+.api-head {
+    background-color: var(--bg-sunken);
+    color: var(--text-faint);
+    font-size: 8.5px;
+    font-weight: 650;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.api-row {
+    border-top: 1px solid var(--line-soft);
+}
+
+.api-row:hover {
+    background-color: var(--bg-sunken);
+}
+
+.api-method {
+    width: 44px;
+    flex-shrink: 0;
+    color: var(--success);
+    font-weight: 650;
+    font-size: 8.5px;
+    letter-spacing: 0.03em;
+}
+
+.api-path {
+    flex: 1.4;
+    min-width: 0;
+    color: var(--text);
+    font-size: 9.5px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.api-type {
+    width: 92px;
+    flex-shrink: 0;
+    color: var(--accent);
+    font-size: 9.5px;
+}
+
+.api-desc {
+    flex: 1;
+    min-width: 0;
+    color: var(--text-muted);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+

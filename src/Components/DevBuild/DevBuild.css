@@ -1,0 +1,146 @@
+﻿/* Build console, options and result summary. */
+
+/* build */
+
+.build-result {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 13px 15px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background-color: var(--bg-sunken);
+}
+
+.build-result.is-success {
+    border-color: var(--success);
+    background-color: var(--success-soft);
+}
+
+.build-result.is-error {
+    border-color: var(--danger);
+    background-color: var(--danger-soft);
+}
+
+.build-result-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    font-size: 14px;
+}
+
+.build-result.is-success .build-result-icon { color: var(--success); }
+.build-result.is-error .build-result-icon { color: var(--danger); }
+
+.build-result-copy {
+    flex: 1;
+    min-width: 0;
+}
+
+.build-result-title {
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--text);
+}
+
+.build-result-sub {
+    margin-top: 1px;
+    font-size: 9px;
+    color: var(--text-muted);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.build-result-stats {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    font-size: 9.5px;
+    color: var(--text-muted);
+}
+
+.build-columns {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 32px;
+}
+
+.build-options {
+    flex: 1 1 340px;
+    min-width: 0;
+}
+
+.build-console-section {
+    flex: 1.3 1 420px;
+    min-width: 0;
+}
+
+.option-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.option-copy {
+    flex: 1;
+    min-width: 0;
+}
+
+.option-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.option-desc {
+    margin-top: 1px;
+    font-size: 9.5px;
+    color: var(--text-faint);
+}
+
+.build-console {
+    max-height: 380px;
+    overflow-y: auto;
+    padding: 11px 12px;
+    border: 1px solid #232a34;
+    border-radius: 8px;
+    background-color: #0f1319;
+    color: #c8d0da;
+    font-family: "Cascadia Code", Consolas, "DejaVu Sans Mono", monospace;
+    font-size: 9.5px;
+    line-height: 1.65;
+}
+
+.build-console.is-empty {
+    padding: 18px;
+    color: #77818e;
+    font-family: inherit;
+    font-size: 10.5px;
+}
+
+.console-line {
+    display: flex;
+    gap: 7px;
+}
+
+.console-mark {
+    color: #5a6472;
+    flex-shrink: 0;
+}
+
+.console-text {
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+    user-select: text;
+}
+

@@ -1,0 +1,138 @@
+﻿/* Shared overlay, modal and dialog chrome. */
+
+/* ------------------------------------------------------------- overlays */
+
+.overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px;
+    background-color: rgba(15, 20, 28, 0.34);
+}
+
+.app.is-dark .overlay {
+    background-color: rgba(0, 0, 0, 0.52);
+}
+
+.overlay.is-center {
+    align-items: center;
+}
+
+.modal {
+    display: flex;
+    flex-direction: column;
+    width: 560px;
+    max-width: calc(100% - 16px);
+    max-height: calc(100% - 16px);
+    overflow: hidden;
+    border: 1px solid var(--line-strong);
+    border-radius: 11px;
+    background-color: var(--bg-panel);
+    box-shadow: var(--shadow-lg);
+}
+
+.modal.is-wide {
+    width: 720px;
+}
+
+.modal.is-narrow {
+    width: 440px;
+}
+
+.modal-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 18px 20px 22px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.modal-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: 9px;
+    background-color: var(--accent-soft);
+    color: var(--accent);
+    font-size: 13px;
+}
+
+.modal-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+}
+
+.modal-title {
+    font-size: 14.5px;
+    font-weight: 650;
+    color: var(--text-strong);
+    letter-spacing: -0.01em;
+}
+
+.modal-sub {
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+
+.modal-body {
+    padding: 18px 20px;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.modal-foot {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 20px;
+    flex-shrink: 0;
+    border-top: 1px solid var(--line-soft);
+    background-color: var(--bg-sunken);
+}
+
+.modal-note {
+    margin-right: auto;
+    font-size: 10.5px;
+    color: var(--text-faint);
+}
+
+.form-error {
+    padding: 8px 10px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    background-color: var(--danger-soft);
+    color: var(--danger);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.form-success {
+    padding: 8px 10px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    background-color: var(--success-soft);
+    color: var(--success);
+    font-size: 11px;
+}
+
+
+.icon-btn.is-danger:hover {
+    background-color: var(--danger-soft);
+    color: var(--danger);
+}
+

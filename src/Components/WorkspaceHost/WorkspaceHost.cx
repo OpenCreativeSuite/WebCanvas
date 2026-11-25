@@ -1,0 +1,56 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>Chooses the workspace for the active tab, or an empty-start surface.</summary>
+public sealed class WorkspaceHost : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+
+        if (session.ActiveTab is null)
+        {
+            return EmptyWorkspace(session);
+        }
+
+        return (
+            <div className="workspace-host">
+                {Show(session.ActiveMode == StudioMode.Content, <ContentWorkspace />)}
+                {Show(session.ActiveMode == StudioMode.Design, <DesignWorkspace />)}
+                {Show(session.ActiveMode == StudioMode.Blocks, <BlocksWorkspace />)}
+                {Show(session.ActiveMode == StudioMode.Data, <DataWorkspace />)}
+                {Show(session.ActiveMode == StudioMode.Automation, <AutomationWorkspace />)}
+                {Show(session.ActiveMode == StudioMode.Development, <DevelopmentWorkspace />)}
+                {Show(session.ActiveMode == StudioMode.Preview, <PreviewWorkspace />)}
+            </div>
+        );
+    }
+
+    private static Node EmptyWorkspace(StudioSession session)
+    {
+        List<Node> modes = [];
+
+        foreach (StudioMode mode in ModeInfo.All)
+        {
+            StudioMode captured = mode;
+            modes.Add(
+                <button className="workspace-empty-mode" onClick={() => session.OpenMode(captured)}>
+                    {Ui.Icon(ModeInfo.Icon(mode))}
+                    {Text(ModeInfo.Label(mode))}
+                </button>);
+        }
+
+        return (
+            <div className="workspace-empty">
+                <div className="empty-icon">{Ui.Icon(Icons.Layers)}</div>
+                <div className="workspace-empty-title">{Text("Everything is closed.")}</div>
+                <div className="workspace-empty-copy">{Text("Open a workspace, or press Ctrl+K to search pages and commands.")}</div>
+                <div className="workspace-empty-grid">{F(modes.ToArray())}</div>
+            </div>
+        );
+    }
+}

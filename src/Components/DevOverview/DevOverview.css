@@ -1,0 +1,152 @@
+﻿/* Project health, folder map and notice list. */
+
+.health-list {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--line-soft);
+}
+
+.health-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 35px;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 11px;
+}
+
+.health-mark {
+    width: 6px;
+    height: 6px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background-color: var(--text-faint);
+}
+
+.health-mark.is-good { background-color: var(--success); }
+.health-mark.is-warning { background-color: var(--warning); }
+.health-mark.is-hint { background-color: var(--accent); }
+.health-mark.is-info { background-color: var(--text-faint); }
+
+.health-label {
+    width: 132px;
+    flex-shrink: 0;
+    color: var(--text);
+    font-weight: 600;
+}
+
+.health-detail {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--text-muted);
+}
+
+.meta-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0 28px;
+}
+
+.folder-map {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--line-soft);
+}
+
+.folder-row {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 10.5px;
+}
+
+.folder-row .mono {
+    width: 190px;
+    flex-shrink: 0;
+    color: var(--accent);
+    font-size: 9.5px;
+}
+
+.folder-row span:last-child {
+    color: var(--text-muted);
+}
+
+.notice-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.notice-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background-color: var(--warning-soft);
+    color: var(--warning);
+    font-size: 10.5px;
+    line-height: 1.5;
+}
+
+.notice-row .fa {
+    margin-top: 1px;
+    font-size: 9.5px;
+}
+
+.dev-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin-top: 12px;
+    font-size: 10px;
+    line-height: 1.5;
+    color: var(--text-faint);
+}
+
+.dev-note .fa {
+    margin-top: 2px;
+    font-size: 9px;
+}
+
+/* theme */
+
+
+.scale-options {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background-color: var(--bg-sunken);
+}
+
+.scale-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    padding: 0 9px;
+    border-radius: 5px;
+    color: var(--text-muted);
+    font-size: 10px;
+    line-height: 1;
+}
+
+.app button.scale-btn:enabled:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.scale-btn.is-active {
+    background-color: var(--bg-panel);
+    box-shadow: var(--shadow-sm);
+    color: var(--accent);
+    font-weight: 600;
+}

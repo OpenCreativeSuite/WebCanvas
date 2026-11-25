@@ -1,0 +1,148 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+public sealed class GraphViewProps : Props
+{
+    public GraphCanvasModel Graph { get; set; } = new();
+
+    public string? SelectedId { get; set; }
+
+    public Action<string>? OnSelect { get; set; }
+
+    public string EmptyText { get; set; } = "Nothing to show yet.";
+
+    public string EmptyHint { get; set; } = "";
+}
+
+/// <summary>A dependency graph rendered with normal document boxes and CSS lines.</summary>
+public sealed class GraphView : Component<GraphViewProps>
+{
+    public override Node Render()
+    {
+        GraphViewProps props = Props;
+
+        if (props.Graph.Nodes.Count == 0)
+        {
+            return (
+                <div className="graph-empty">
+                    {Ui.Empty(Icons.Graph, props.EmptyText, props.EmptyHint)}
+                </div>
+            );
+        }
+
+        List<Node> layers = [];
+
+        foreach (GraphEdgeModel edge in props.Graph.Edges)
+        {
+            GraphNodeModel? from = props.Graph.Nodes.FirstOrDefault(node => node.Id == edge.From);
+            GraphNodeModel? to = props.Graph.Nodes.FirstOrDefault(node => node.Id == edge.To);
+
+            if (from is null || to is null)
+            {
+                continue;
+            }
+
+            (double startX, double startY) = Boundary(from, to.CenterX, to.CenterY);
+            (double endX, double endY) = Boundary(to, from.CenterX, from.CenterY);
+            double dx = endX - startX;
+            double dy = endY - startY;
+            double length = Math.Sqrt(dx * dx + dy * dy);
+            double angle = Math.Atan2(dy, dx) * 180.0 / Math.PI;
+            double midX = startX + dx * 0.5;
+            double midY = startY + dy * 0.5;
+
+            layers.Add(
+                <div className="graph-edge"
+                    attributes={new()
+                    {
+                        ["style"] = "left:" + Number(startX) + "px;top:" + Number(startY)
+                                    + "px;width:" + Number(length) + "px;transform:rotate(" + Number(angle) + "deg);",
+                    }} />);
+
+            layers.Add(
+                <span className="graph-edge-dot"
+                    attributes={new()
+                    {
+                        ["style"] = "left:" + Number(endX - 3) + "px;top:" + Number(endY - 3) + "px;",
+                    }} />);
+
+            if (!string.IsNullOrWhiteSpace(edge.Label))
+            {
+                layers.Add(
+                    <span className="graph-edge-label"
+                        attributes={new()
+                        {
+                            ["style"] = "left:" + Number(midX) + "px;top:" + Number(midY - 9) + "px;transform:translateX(-50%);",
+                        }}>
+                        {Text(edge.Label)}
+                    </span>);
+            }
+        }
+
+        List<Node> nodes = [];
+
+        foreach (GraphNodeModel node in props.Graph.Nodes)
+        {
+            GraphNodeModel captured = node;
+            bool selected = props.SelectedId == node.Id;
+            List<string> classes = ["graph-node", "tone-" + node.Tone];
+
+            if (selected)
+            {
+                classes.Add("is-selected");
+            }
+
+            nodes.Add(
+                <button className={string.Join(' ', classes)}
+                    title={node.Title + (node.Subtitle.Length > 0 ? " · " + node.Subtitle : "")}
+                    attributes={new()
+                    {
+                        ["style"] = "left:" + Number(node.X) + "px;top:" + Number(node.Y)
+                                    + "px;width:" + Number(node.Width) + "px;height:" + Number(node.Height) + "px;",
+                    }}
+                    onClick={() => props.OnSelect?.Invoke(captured.Id)}>
+                    <span className="graph-node-icon">{Ui.Icon(node.Icon)}</span>
+                    <span className="graph-node-copy">
+                        <span className="graph-node-title">{Text(node.Title)}</span>
+                        <span className="graph-node-sub">{Text(node.Subtitle)}</span>
+                    </span>
+                    {Show(node.Badge.Length > 0, <span className="graph-node-badge">{Text(node.Badge)}</span>)}
+                </button>);
+        }
+
+        return (
+            <div className="graph-scroll">
+                <div className="graph-canvas"
+                    attributes={new()
+                    {
+                        ["style"] = "width:" + Number(props.Graph.Width) + "px;height:" + Number(props.Graph.Height) + "px;",
+                    }}>
+                    {F(layers.ToArray())}
+                    {F(nodes.ToArray())}
+                </div>
+            </div>
+        );
+    }
+
+    private static (double X, double Y) Boundary(GraphNodeModel node, double towardX, double towardY)
+    {
+        double dx = towardX - node.CenterX;
+        double dy = towardY - node.CenterY;
+
+        if (Math.Abs(dx) < 0.01 && Math.Abs(dy) < 0.01)
+        {
+            return (node.CenterX, node.CenterY);
+        }
+
+        double tx = Math.Abs(dx) > 0.01 ? node.Width / 2.0 / Math.Abs(dx) : double.PositiveInfinity;
+        double ty = Math.Abs(dy) > 0.01 ? node.Height / 2.0 / Math.Abs(dy) : double.PositiveInfinity;
+        double t = Math.Min(tx, ty);
+        return (node.CenterX + dx * t, node.CenterY + dy * t);
+    }
+
+    private static string Number(double value) =>
+        value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+}

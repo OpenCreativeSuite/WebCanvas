@@ -1,0 +1,209 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>Theme tokens with a live preview of the published page style.</summary>
+public sealed class DevTheme : Component
+{
+    private static readonly (string Name, string Value)[] Accents =
+    [
+        ("Forest", "#2f6b4f"),
+        ("Ink", "#2456c7"),
+        ("Plum", "#7b3f8f"),
+        ("Clay", "#a35a34"),
+        ("Slate", "#3d566e"),
+        ("Ochre", "#a06a12"),
+    ];
+
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        WcProject? project = session.Project;
+
+        if (project is null)
+        {
+            return <div className="dev-page">{Ui.Empty(Icons.Palette, "No theme yet", "Open a project to edit its theme.")}</div>;
+        }
+
+        ThemeDoc theme = project.Theme;
+
+        return (
+            <div className="dev-page">
+                <header className="dev-hero">
+                    <div className="dev-eyebrow">{Text("Development")}</div>
+                    <h1 className="dev-title">{Text("Theme")}</h1>
+                    <p className="dev-lead">
+                        {Text("Colour, type and radius live in one place. The canvas and every generated page read the same tokens.")}
+                    </p>
+                    <div className="inline-actions">
+                        {Ui.Button("Reset theme", session.ResetTheme, "ghost", Icons.Refresh, small: true)}
+                    </div>
+                </header>
+
+                <section className="dev-section">
+                    <div className="dev-section-head">
+                        <h2 className="dev-section-title">{Text("Theme blocks")}</h2>
+                        <span className="dev-section-note">{Text(session.ThemeBlocks.Count + " reusable")}</span>
+                    </div>
+                    <div className="theme-block-chips">
+                        {Each(session.ThemeBlocks, block =>
+                        {
+                            BlockDoc captured = block;
+                            return (
+                                <button className="theme-chip" onClick={() => session.OpenBlock(captured)}>
+                                    {Ui.Icon(Icons.Palette)}
+                                    <span>{Text(block.Name)}</span>
+                                    <span className="theme-chip-count">{Text(session.BlockUsageCount(block).ToString())}</span>
+                                </button>);
+                        })}
+                        {Ui.Button("New theme block", session.NewThemeBlock, "ghost", Icons.Plus, small: true)}
+                    </div>
+                    <div className="dev-note">
+                        {Ui.Icon(Icons.Info)}
+                        <span>{Text("Theme blocks are the header, footer and layout chrome. Edit them once and every page follows.")}</span>
+                    </div>
+                </section>
+
+                <div className="theme-columns">
+                    <section className="dev-section theme-form">
+                        <div className="dev-section-head">
+                            <h2 className="dev-section-title">{Text("Tokens")}</h2>
+                        </div>
+
+                        {Show(session.ThemeError.Length > 0, <div className="form-error">{Text(session.ThemeError)}</div>)}
+
+                        {Ui.Field("Theme name",
+                            Ui.Input(session, theme.Name, value => session.EditTheme(target => target.Name = value), "Studio"))}
+
+                        <div className="field">
+                            <span className="field-label">{Text("Accent")}</span>
+                            <div className="accent-row">
+                                {Each(Accents, accent =>
+                                {
+                                    string value = accent.Value;
+                                    bool active = string.Equals(theme.Accent, accent.Value, StringComparison.OrdinalIgnoreCase);
+                                    return (
+                                        <button className={active ? "accent-swatch is-active" : "accent-swatch"}
+                                            title={accent.Name}
+                                            onClick={() => session.ApplyAccent(value)}>
+                                            <span className="accent-dot" attributes={new() { ["style"] = "background-color:" + value }} />
+                                        </button>);
+                                })}
+                                <input className="text-input accent-input mono"
+                                    type="text"
+                                    value={theme.Accent}
+                                    onChange={value => session.ApplyAccent(value)}
+                                    onFocus={() => session.IsTyping = true}
+                                    onBlur={() => session.IsTyping = false} />
+                            </div>
+                        </div>
+
+                        <div className="form-grid">
+                            {Ui.Field("Background",
+                                Ui.Input(session, theme.Background, value => session.EditTheme(target => target.Background = value), "#f7f4ee"))}
+                            {Ui.Field("Surface",
+                                Ui.Input(session, theme.Surface, value => session.EditTheme(target => target.Surface = value), "#fffdf8"))}
+                        </div>
+
+                        <div className="form-grid">
+                            {Ui.Field("Text",
+                                Ui.Input(session, theme.Text, value => session.EditTheme(target => target.Text = value), "#1d2a22"))}
+                            {Ui.Field("Muted",
+                                Ui.Input(session, theme.Muted, value => session.EditTheme(target => target.Muted = value), "#5d6b61"))}
+                        </div>
+
+                        <div className="form-grid">
+                            {Ui.Field("Border",
+                                Ui.Input(session, theme.Border, value => session.EditTheme(target => target.Border = value), "#e2ded3"))}
+                            {Ui.Field("Radius",
+                                Ui.Input(session, theme.Radius.ToString(), value =>
+                                {
+                                    if (int.TryParse(value, out int radius))
+                                    {
+                                        session.EditTheme(target => target.Radius = Math.Clamp(radius, 0, 40));
+                                    }
+                                }, "10"),
+                                "Pixels, 0 to 40.")}
+                        </div>
+
+                        <div className="form-grid">
+                            {Ui.Field("Heading font",
+                                Ui.Input(session, theme.HeadingFont, value => session.EditTheme(target => target.HeadingFont = value), "Georgia"))}
+                            {Ui.Field("Body font",
+                                Ui.Input(session, theme.BodyFont, value => session.EditTheme(target => target.BodyFont = value), "Segoe UI"))}
+                        </div>
+                    </section>
+
+                    <aside className="theme-preview-column">
+                        <div className="theme-preview-label">{Text("Live preview")}</div>
+                        <div className="wc-site theme-preview" attributes={new() { ["style"] = theme.CssVariables() }}>
+                            <div className="theme-preview-inner">
+                                <div className="theme-preview-head">
+                                    <div className="site-brand">
+                                        <span className="site-mark" />
+                                        <span>{Text(theme.Name)}</span>
+                                    </div>
+                                    <div className="site-nav">
+                                        <span>Work</span>
+                                        <span>Journal</span>
+                                        <span>Contact</span>
+                                    </div>
+                                </div>
+
+                                <div className="theme-preview-hero">
+                                    <span className="eyebrow">{Text("Independent studio")}</span>
+                                    <h2 className="hero-title">{Text("Interfaces that feel inevitable.")}</h2>
+                                    <p className="hero-copy">{Text("A calm surface over a clear content model. This preview uses the same stylesheet as the generated site.")}</p>
+                                    <div className="hero-actions">
+                                        <span className="site-btn">{Text("Start a project")}</span>
+                                        <span className="site-btn ghost">{Text("See the work")}</span>
+                                    </div>
+                                </div>
+
+                                <div className="feature-grid">
+                                    <div className="feature">
+                                        <div className="feature-icon">{Ui.Icon(Icons.Layers)}</div>
+                                        <h3 className="feature-title">{Text("Readable structure")}</h3>
+                                        <p className="feature-copy">{Text("Every heading, paragraph and block shares the same scale.")}</p>
+                                    </div>
+                                    <div className="feature">
+                                        <div className="feature-icon">{Ui.Icon(Icons.Palette)}</div>
+                                        <h3 className="feature-title">{Text("One source of colour")}</h3>
+                                        <p className="feature-copy">{Text("Change the accent once and the whole site follows.")}</p>
+                                    </div>
+                                </div>
+
+                                <div className="collection-grid">
+                                    <div className="post-card">
+                                        <div className="post-thumb" />
+                                        <div className="post-body">
+                                            <div className="post-meta">{Text("Journal · Nov 2026")}</div>
+                                            <div className="post-title">{Text("Designing for the second visit")}</div>
+                                            <p className="post-excerpt">{Text("The first impression gets the attention. The second visit decides whether the product is good.")}</p>
+                                        </div>
+                                    </div>
+                                    <div className="post-card">
+                                        <div className="post-thumb is-warm" />
+                                        <div className="post-body">
+                                            <div className="post-meta">{Text("Work · 2026")}</div>
+                                            <div className="post-title">{Text("Northline")}</div>
+                                            <p className="post-excerpt">{Text("A dispatch platform designed around the rhythm of a shift.")}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="theme-preview-note">
+                            {Ui.Icon(Icons.Info)}
+                            <span>{Text("The preview is scoped to the theme tokens; your project's own classes are applied on the canvas.")}</span>
+                        </div>
+                    </aside>
+                </div>
+
+            </div>
+        );
+    }
+}

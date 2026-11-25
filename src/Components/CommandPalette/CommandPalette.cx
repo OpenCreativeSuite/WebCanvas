@@ -1,0 +1,76 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>A keyboard-driven command and navigation palette.</summary>
+public sealed class CommandPalette : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        List<PaletteEntry> commands = session.PaletteCommands();
+        List<Node> rows = [];
+        string? lastGroup = null;
+
+        for (int index = 0; index < commands.Count; index++)
+        {
+            PaletteEntry command = commands[index];
+
+            if (command.Group != lastGroup)
+            {
+                lastGroup = command.Group;
+                rows.Add(<div className="palette-group">{Text(command.Group)}</div>);
+            }
+
+            bool active = index == session.PaletteIndex;
+            int target = index;
+            PaletteEntry captured = command;
+            rows.Add(
+                <button className={active ? "palette-row is-active" : "palette-row"}
+                    onClick={captured.Action}
+                    onMouseOver={() => session.SetPaletteIndex(target)}>
+                    {Ui.Icon(captured.Icon)}
+                    <span className="palette-label">{Text(captured.Label)}</span>
+                    {Show(captured.Hint.Length > 0, <span className="palette-hint">{Text(captured.Hint)}</span>)}
+                </button>);
+        }
+
+        return (
+            <div className="palette-overlay" onClick={session.ClosePalette}>
+                <div className="palette" onClickEvent={e => e.StopPropagation()}>
+                    <div className="palette-input-row">
+                        {Ui.Icon(Icons.Search)}
+                        {Show(session.PaletteQuery.Length == 0,
+                            <div className="palette-query is-placeholder">
+                                <span>{Text("Search pages, types, commands and agents")}</span>
+                                <span className="palette-caret" />
+                            </div>)}
+                        {Show(session.PaletteQuery.Length > 0,
+                            <div className="palette-query">
+                                <span>{Text(session.PaletteQuery)}</span>
+                                <span className="palette-caret" />
+                            </div>)}
+                        {Ui.Key("Up / Down")}
+                    </div>
+
+                    <div className="palette-list">
+                        {Show(commands.Count == 0,
+                            <div className="palette-empty">{Text("No commands match. Try a page title, a data type, or “build”.")}</div>)}
+                        <div className="palette-rows">{rows.ToArray()}</div>
+                    </div>
+
+                    <div className="palette-foot">
+                        <span className="palette-foot-item">{Ui.Key("Up / Down")}{Text("Navigate")}</span>
+                        <span className="palette-foot-item">{Ui.Key("Enter")}{Text("Run")}</span>
+                        <span className="palette-foot-item">{Ui.Key("Esc")}{Text("Close")}</span>
+                        <span className="flex-spacer" />
+                        <span className="palette-foot-item">{Text("Type to filter · Enter to run")}</span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+}

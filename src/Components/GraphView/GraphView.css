@@ -1,0 +1,128 @@
+﻿/* Node graph canvas, edges and nodes. */
+
+/* ------------------------------------------------------------- node graph */
+
+.graph-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 18px;
+    background-color: var(--bg-app);
+    background-image: radial-gradient(var(--line-strong) 1px, transparent 1.5px);
+    background-size: 24px 24px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb) var(--bg-sunken);
+}
+
+.graph-canvas {
+    position: relative;
+    min-width: 100%;
+}
+
+.graph-edge {
+    position: absolute;
+    height: 1.5px;
+    transform-origin: 0 50%;
+    background-color: var(--accent-line);
+    opacity: 0.8;
+}
+
+.graph-edge-dot {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--accent);
+}
+
+.graph-edge-label {
+    position: absolute;
+    z-index: 2;
+    padding: 1px 6px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background-color: var(--bg-panel);
+    color: var(--text-faint);
+    font-size: 8.5px;
+    white-space: nowrap;
+}
+
+.graph-node {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background-color: var(--bg-panel);
+    box-shadow: var(--shadow-sm);
+    text-align: left;
+}
+
+.app button.graph-node:enabled:hover {
+    border-color: var(--accent-line);
+    background-color: var(--bg-panel);
+    box-shadow: var(--shadow-md);
+}
+
+.graph-node.is-selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.graph-node-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    background-color: var(--accent-soft);
+    color: var(--accent);
+    font-size: 12px;
+}
+
+.graph-node-copy {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.graph-node-title {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.graph-node-sub {
+    margin-top: 2px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--text-faint);
+    font-size: 9.5px;
+}
+
+.graph-node-badge {
+    flex-shrink: 0;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background-color: var(--bg-active);
+    color: var(--text-muted);
+    font-size: 8.5px;
+}
+
+.graph-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: 360px;
+}
+

@@ -1,0 +1,193 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>Right-hand inspector for the data model: field settings or relationships.</summary>
+public sealed class DataInspector : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        DataSchema? schema = session.CurrentSchema;
+        DataField? field = session.CurrentField;
+
+        return (
+            <aside className="inspector">
+                <div className="inspector-head">
+                    <span className="inspector-title">{Text(field is null ? "Relationships" : "Field")}</span>
+                    {Show(schema is not null, schema is null ? null : <span className="badge">{Text(schema.Name)}</span>)}
+                    {Ui.IconButton(Icons.ChevronRight, "Hide inspector (Ctrl+Shift+I)", session.ToggleInspector)}
+                </div>
+
+                <div className="inspector-body">
+                    {Show(schema is null,
+                        <div className="inspector-pad">
+                            {Ui.Empty(Icons.Database, "No type selected", "Choose a data type to inspect its fields and relationships.")}
+                        </div>)}
+
+                    {Show(schema is not null && field is not null, schema is null || field is null ? null : FieldSettings(session, schema, field))}
+                    {Show(schema is not null && field is null, schema is null ? null : RelationshipSettings(session, schema))}
+                </div>
+            </aside>
+        );
+    }
+
+    private static Node FieldSettings(StudioSession session, DataSchema schema, DataField field)
+    {
+        return (
+            <div>
+                <div className="inspector-pad">
+                    <div className="node-summary">
+                        <div className="node-summary-icon">{Ui.Icon(Icons.ForField(field.Type))}</div>
+                        <div className="node-summary-copy">
+                            <div className="node-summary-title">{Text(field.Display)}</div>
+                            <div className="node-summary-sub mono">{Text(field.Name)}</div>
+                        </div>
+                    </div>
+                    {Ui.Button("Back to relationships", () => session.SelectField(null), "ghost", Icons.Back, small: true)}
+                </div>
+
+                {Ui.Section(session, "field-basics", "Field",
+                    <div>
+                        {Ui.Field("Name",
+                            Ui.Input(session, field.Name, value => session.RenameField(schema, field, value), "fieldName"),
+                            "Used in JSON, loops and generated APIs.")}
+                        {Ui.Field("Label",
+                            Ui.Input(session, field.Label ?? "", value => session.SetFieldMeta(schema, field, target => target.Label = value), field.Display),
+                            "What editors see in Content.")}
+                        {Ui.Field("Type",
+                            Ui.Select(session,
+                                FieldTypes.All.Select(type => (type, FieldTypes.Label(type))),
+                                field.Type,
+                                value => session.SetFieldType(schema, field, value)))}
+                        <div className="inspector-row">
+                            <span className="inspector-row-label">{Text("Required")}</span>
+                            {Ui.Toggle(field.Required, value => session.SetFieldMeta(schema, field, target => target.Required = value))}
+                        </div>
+                        {Ui.Field("Help", Ui.Input(session, field.Help ?? "", value => session.SetFieldMeta(schema, field, target => target.Help = value), "A hint for editors"))}
+                    </div>)}
+
+                {Show(field.Type == FieldTypes.Relation,
+                    Ui.Section(session, "field-relation", "Relationship",
+                        <div>
+                            {Ui.Field("Target type",
+                                Ui.Select(session,
+                                    session.RelationTargets(schema).Select(target => (target.Name, target.Name)),
+                                    field.Target ?? "",
+                                    value => session.SetFieldMeta(schema, field, target => target.Target = value)))}
+                            <div className="inspector-hint">
+                                {Text("Stores the target record id. Published data keeps the id so the relationship is explicit.")}
+                            </div>
+                        </div>))}
+
+                {Show(field.Type == FieldTypes.Select,
+                    Ui.Section(session, "field-options", "Options",
+                        Ui.Field("Values",
+                            Ui.TextArea(session,
+                                string.Join("\n", field.Options ?? new List<string>()),
+                                value => session.SetFieldMeta(schema, field, target =>
+                                    target.Options = value.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList()),
+                                "One option per line", rows: 4))))}
+
+                <div className="inspector-pad">
+                    {Ui.Button("Delete field", () => session.DeleteField(schema, field), "ghost", Icons.Delete, small: true)}
+                </div>
+            </div>
+        );
+    }
+
+    private static Node RelationshipSettings(StudioSession session, DataSchema schema)
+    {
+        List<Node> outgoing = [];
+        List<Node> incoming = [];
+
+        foreach (DataField field in schema.Relations())
+        {
+            DataField captured = field;
+            outgoing.Add(
+                <button className="rel-row" onClick={() => session.SelectField(captured.Name)}>
+                    <span className="rel-icon">{Ui.Icon(Icons.Link)}</span>
+                    <span className="rel-copy">
+                        <span className="rel-title">{Text(field.Display)}</span>
+                        <span className="rel-sub">{Text(field.Name + " → " + (field.Target ?? "missing"))}</span>
+                    </span>
+                    {Ui.Icon(Icons.ChevronRight, "rel-chevron")}
+                </button>);
+        }
+
+        foreach (DataSchema source in session.IncomingRelations(schema))
+        {
+            DataSchema captured = source;
+            int count = source.Relations().Count(field => field.Target == schema.Name);
+            incoming.Add(
+                <button className="rel-row" onClick={() => session.SelectSchema(captured.Name, openContent: false)}>
+                    <span className="rel-icon">{Ui.Icon(source.Icon)}</span>
+                    <span className="rel-copy">
+                        <span className="rel-title">{Text(source.Name)}</span>
+                        <span className="rel-sub">{Text(count + (count == 1 ? " field points here" : " fields point here"))}</span>
+                    </span>
+                    {Ui.Icon(Icons.ChevronRight, "rel-chevron")}
+                </button>);
+        }
+
+        return (
+            <div>
+                <div className="inspector-pad">
+                    <div className="node-summary">
+                        <div className="node-summary-icon">{Ui.Icon(schema.Icon)}</div>
+                        <div className="node-summary-copy">
+                            <div className="node-summary-title">{Text(schema.Name)}</div>
+                            <div className="node-summary-sub">
+                                {Text((session.Project?.CountOf(schema) ?? 0) + " records · " + schema.Fields.Count + " fields")}
+                            </div>
+                        </div>
+                    </div>
+                    {Ui.Button("Add a field", session.ToggleAddFieldMenu, "secondary", Icons.Plus, small: true)}
+                </div>
+
+                {Ui.Section(session, "rel-out", "Outgoing", 
+                    <div>
+                        {Show(outgoing.Count == 0,
+                            <div className="inspector-hint">{Text("This type does not point at another type yet. Add a relation field to connect records.")}</div>)}
+                        {F(outgoing.ToArray())}
+                    </div>,
+                    subtitle: outgoing.Count.ToString())}
+
+                {Ui.Section(session, "rel-in", "Referenced by",
+                    <div>
+                        {Show(incoming.Count == 0,
+                            <div className="inspector-hint">{Text("No other type points at this one.")}</div>)}
+                        {F(incoming.ToArray())}
+                    </div>,
+                    subtitle: incoming.Count.ToString())}
+
+                {Ui.Section(session, "rel-output", "Published shape",
+                    <div>
+                        <div className="inspector-row">
+                            <span className="inspector-row-label">{Text("Publish JSON")}</span>
+                            {Ui.Toggle(schema.Public, on => session.SetSchemaPublic(schema, on))}
+                        </div>
+                        <div className="inspector-hint">
+                            {Text(schema.Public
+                                ? "Record JSON and API routes are part of the static site. Add a collection to a page to display records."
+                                : "The type stays editable here, but its JSON and API routes are omitted from the build. Collections already placed on pages still render.")}
+                        </div>
+                        {Show(schema.Public,
+                            <div>
+                                {Ui.Meta("Folder", "app/data/" + Ids.Slug(schema.Plural))}
+                                {Ui.Meta("Index", "/data/" + Ids.Slug(schema.Plural) + "/index.json")}
+                                {Ui.Meta("Record", "/data/" + Ids.Slug(schema.Plural) + "/{id}.json")}
+                            </div>)}
+                        {Ui.Button("Show on site", () => session.ShowSchemaOnSite(schema), "secondary", Icons.Eye, small: true)}
+                    </div>)}
+
+                <div className="inspector-note">
+                    {Text("Select a relation to change its target. Deleting a type keeps its records on disk.")}
+                </div>
+            </div>
+        );
+    }
+}

@@ -1,0 +1,60 @@
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>A quiet status strip: project state on the left, context on the right.</summary>
+public sealed class StatusBar : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        string context = session.ActiveMode switch
+        {
+            StudioMode.Content => session.ContentMapOpen ? "Map" : session.CurrentSchema?.Name ?? "Content",
+            StudioMode.Design => session.CurrentPage?.Title ?? "Design",
+            StudioMode.Blocks => session.IsEditingBlock ? session.CurrentBlock?.Name ?? "Blocks" : "Library",
+            StudioMode.Data => session.CurrentSchema?.Name ?? "Data",
+            StudioMode.Automation => StudioSession.EventLabel(session.SelectedEvent),
+            _ => ModeInfo.DevLabel(session.DevSection),
+        };
+
+        return (
+            <footer className="statusbar">
+                <div className="status-group">
+                    <span className="status-item">
+                        {Ui.Icon(Icons.Folder)}
+                        {Text(session.Project?.Name ?? "No project")}
+                    </span>
+                    <span className="status-sep" />
+                    <span className="status-item">
+                        {Ui.Icon(session.SaveState == "All changes saved" ? Icons.Check : Icons.Pencil)}
+                        {Text(session.SaveState)}
+                    </span>
+                    {Show(session.Project is not null, session.Project is null ? null :
+                        <span className="status-item">
+                            {Ui.Icon(Icons.Layers)}
+                            {Text((session.Project.Pages.Count == 1 ? "1 page" : session.Project.Pages.Count + " pages")
+                                + " · "
+                                + (session.Project.TotalEntities == 1 ? "1 record" : session.Project.TotalEntities + " records"))}
+                        </span>)}
+                </div>
+
+                <div className="status-group is-right">
+                    <span className="status-item">
+                        {Ui.Icon(ModeInfo.Icon(session.ActiveMode))}
+                        {Text(ModeInfo.Label(session.ActiveMode))}
+                    </span>
+                    <span className="status-sep" />
+                    <span className="status-item">{Text(context)}</span>
+                    {Show(session.ActiveMode is StudioMode.Design or StudioMode.Blocks,
+                        <span className="status-item">
+                            {Ui.Icon(Icons.Desktop)}
+                            {Text(session.SelectedViewportLabel + " · " + session.Preferences.DesignZoom + "%")}
+                        </span>)}
+                </div>
+            </footer>
+        );
+    }
+}

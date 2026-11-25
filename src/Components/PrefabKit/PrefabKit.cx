@@ -1,0 +1,71 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+public sealed class PrefabKitProps : Props
+{
+    public bool Compact { get; set; }
+}
+
+/// <summary>
+/// Core full-width header and footer layouts. Applying one to an empty block
+/// fills it immediately; applying one to a populated block asks first.
+/// </summary>
+public sealed class PrefabKit : Component<PrefabKitProps>
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        bool compact = Props?.Compact == true;
+
+        List<Node> headers = [];
+        List<Node> footers = [];
+
+        foreach (CoreBlockPrefab prefab in CorePrefabs.All)
+        {
+            CoreBlockPrefab captured = prefab;
+            Node card = (
+                <button className="prefab-card"
+                    title={captured.Description}
+                    onClick={() => session.UseCorePrefab(captured.Id)}>
+                    <span className="prefab-icon">{Ui.Icon(captured.Icon)}</span>
+                    <span className="prefab-copy">
+                        <span className="prefab-name">{Text(captured.Name)}</span>
+                        {Show(!compact, <span className="prefab-desc">{Text(captured.Description)}</span>)}
+                    </span>
+                </button>);
+
+            if (captured.Category == "Footer")
+            {
+                footers.Add(card);
+            }
+            else
+            {
+                headers.Add(card);
+            }
+        }
+
+        return (
+            <div className={compact ? "prefab-kit is-compact" : "prefab-kit"}>
+                <div className="prefab-kit-head">
+                    <span className="prefab-kit-title">{Text("Core prefabs")}</span>
+                    <span className="prefab-kit-hint">
+                        {Text(session.IsEditingBlock ? "Apply to this block" : "Create a block")}
+                    </span>
+                </div>
+
+                <div className="prefab-group">
+                    <div className="prefab-group-head">{Text("Headers")}</div>
+                    <div className="prefab-grid">{F(headers.ToArray())}</div>
+                </div>
+
+                <div className="prefab-group">
+                    <div className="prefab-group-head">{Text("Footers")}</div>
+                    <div className="prefab-grid">{F(footers.ToArray())}</div>
+                </div>
+            </div>);
+    }
+}

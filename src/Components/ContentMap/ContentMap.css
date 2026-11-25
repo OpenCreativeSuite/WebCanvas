@@ -1,0 +1,58 @@
+﻿/* Content map overview. */
+
+/* ------------------------------------------------------------ content map */
+
+.content-map {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    background-color: var(--bg-app);
+}
+
+.map-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 15px 18px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--line);
+    background-color: var(--bg-panel);
+}
+
+.map-title {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+}
+
+.map-sub {
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
+.map-legend {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+}
+
+.map-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-faint);
+    font-size: 9.5px;
+}
+
+.map-legend-line {
+    width: 18px;
+    height: 2px;
+    border-radius: 1px;
+    background-color: var(--accent-line);
+}
+

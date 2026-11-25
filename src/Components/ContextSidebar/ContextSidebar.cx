@@ -1,0 +1,417 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>The contextual left sidebar. Its contents follow the active workspace.</summary>
+public sealed class ContextSidebar : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+
+        string title = session.ActiveMode switch
+        {
+            StudioMode.Content => "Content",
+            StudioMode.Data => "Data model",
+            StudioMode.Automation => "Events",
+            StudioMode.Design => "Design",
+            StudioMode.Blocks => "Blocks",
+            _ => "Development",
+        };
+
+        return (
+            <aside className="sidebar">
+                <div className="sidebar-head">
+                    <span className="sidebar-title">{Text(title)}</span>
+                    <div className="sidebar-actions">
+                        {Show(session.ActiveMode == StudioMode.Content,
+                            Ui.IconButton(Icons.Plus, "New data type", session.NewSchema))}
+                        {Show(session.ActiveMode == StudioMode.Design,
+                            Ui.IconButton(Icons.Plus, "New page", session.NewPage))}
+                        {Show(session.ActiveMode == StudioMode.Blocks,
+                            Ui.IconButton(Icons.Cube, "New block", session.NewBlock))}
+                        {Show(session.ActiveMode == StudioMode.Blocks,
+                            Ui.IconButton(Icons.Palette, "New theme block", session.NewThemeBlock))}
+                        {Show(session.ActiveMode == StudioMode.Data,
+                            Ui.IconButton(Icons.Plus, "New data type", session.NewSchema))}
+                        {Show(session.ActiveMode == StudioMode.Automation,
+                            Ui.IconButton(Icons.Plus, "New handler", () => session.NewHandler(session.SelectedEvent)))}
+                        {Ui.IconButton(Icons.ChevronLeft, "Hide sidebar (Ctrl+B)", session.ToggleSidebar)}
+                    </div>
+                </div>
+
+                <div className="sidebar-body">
+                    {Show(session.ActiveMode == StudioMode.Content, ContentSidebar(session))}
+                    {Show(session.ActiveMode == StudioMode.Design, DesignSidebar(session))}
+                    {Show(session.ActiveMode == StudioMode.Blocks, BlocksSidebar(session))}
+                    {Show(session.ActiveMode == StudioMode.Data, DataSidebar(session))}
+                    {Show(session.ActiveMode == StudioMode.Automation, AutomationSidebar(session))}
+                    {Show(session.ActiveMode == StudioMode.Development, DevelopmentSidebar(session))}
+                </div>
+            </aside>
+        );
+    }
+
+    private static Node ContentSidebar(StudioSession session)
+    {
+        List<Node> rows = [];
+        List<DataSchema> schemas = session.Project?.Schemas ?? [];
+
+        foreach (DataSchema schema in schemas)
+        {
+            DataSchema captured = schema;
+            bool active = !session.ContentMapOpen && session.CurrentSchema?.Name == schema.Name;
+            rows.Add(
+                <button className={active ? "side-row is-active" : "side-row"}
+                    title={schema.Description}
+                    onClick={() => session.SelectSchema(captured.Name)}>
+                    {Ui.Icon(schema.Icon)}
+                    <span className="side-row-label">{Text(schema.Name)}</span>
+                    <span className="side-count">{Text((session.Project?.CountOf(schema) ?? 0).ToString())}</span>
+                </button>);
+        }
+
+        return (
+            <div>
+                <div className="side-group">
+                    <div className="side-group-head">
+                        <span>{Text("Data types")}</span>
+                        <span className="side-group-count">{Text(schemas.Count.ToString())}</span>
+                    </div>
+                    {Show(rows.Count == 0,
+                        <div className="side-empty">{Text("No data types yet. Create one to start modelling your content.")}</div>)}
+                    {F(rows.ToArray())}
+                </div>
+
+                <div className="side-note">
+                    {Text("Records live as JSON files under app/data. Search and relationships are part of the same workspace.")}
+                </div>
+            </div>
+        );
+    }
+
+    private static Node DesignSidebar(StudioSession session)
+    {
+        List<Node> pageRows = [];
+        List<PageDoc> pages = session.Project?.Pages ?? [];
+
+        foreach (PageDoc page in pages)
+        {
+            PageDoc captured = page;
+            bool active = session.SelectedPageId == page.Id;
+            pageRows.Add(
+                <button className={active ? "side-row is-active" : "side-row"}
+                    title={page.IsHome ? "Site home" : "/" + page.Slug}
+                    onClick={() => session.SelectPage(captured.Id)}>
+                    {Ui.Icon(page.IsHome ? Icons.House : Icons.File)}
+                    <span className="side-row-label">{Text(page.Title)}</span>
+                    {Show(page.IsHome, <span className="side-count">{Text("/")}</span>)}
+                </button>);
+        }
+
+        List<Node> treeRows = [];
+        PageDoc? current = session.CurrentPage;
+
+        if (current is not null)
+        {
+            foreach (PageNode node in current.Nodes)
+            {
+                AddTreeRows(treeRows, current, node, 0, session);
+            }
+        }
+
+        return (
+            <div>
+                <div className="side-group">
+                    <div className="side-group-head">
+                        <span>{Text("Pages")}</span>
+                        <span className="side-group-count">{Text(pages.Count.ToString())}</span>
+                    </div>
+                    {F(pageRows.ToArray())}
+                </div>
+
+                <div className="side-section-rule" />
+
+                <WidgetPalette />
+
+                <div className="side-section-rule" />
+
+                <div className="side-group">
+                    <div className="side-group-head">
+                        <span>{Text("Page layers")}</span>
+                        {Show(current is not null, current is null ? null : <span className="side-group-count">{Text(current.Title)}</span>)}
+                    </div>
+
+                    {Show(current is null,
+                        <div className="side-empty">{Text("Choose a page to see its layers.")}</div>)}
+
+                    {Show(current is not null && treeRows.Count == 0,
+                        <div className="side-empty">{Text("Nothing here yet. Drag a widget into the page.")}</div>)}
+
+                    {F(treeRows.ToArray())}
+                </div>
+
+                <div className="side-note">
+                    {Text("Drag widgets into the canvas, then select a block to edit its properties live.")}
+                </div>
+            </div>
+        );
+    }
+
+    private static Node BlocksSidebar(StudioSession session)
+    {
+        List<Node> blockRows = [];
+        List<BlockDoc> blocks = session.Project?.Blocks ?? [];
+
+        foreach (BlockDoc block in blocks.OrderBy(block => block.Kind).ThenBy(block => block.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            BlockDoc captured = block;
+            bool active = session.EditingBlockId == block.Id;
+            string payload = "block:" + block.Id;
+            blockRows.Add(
+                <button className={active ? "side-row is-active" : "side-row"}
+                    title={block.Description}
+                    attributes={new() { ["data-drag-label"] = block.Name }}
+                    draggable={session.IsEditingBlock && session.CanInsertBlock(block)}
+                    onDragStart={e =>
+                    {
+                        e.Data.SetData("application/x-webcanvas-widget", payload);
+                        e.Data.EffectAllowed = "copy";
+                        session.BeginWidgetDrag(payload);
+                    }}
+                    onDragEnd={_ => session.EndWidgetDrag()}
+                    onClick={() =>
+                    {
+                        if (session.ShouldIgnoreWidgetClick())
+                        {
+                            return;
+                        }
+
+                        session.OpenBlock(captured);
+                    }}>
+                    {Ui.Icon(block.Kind == "theme" ? Icons.Palette : Icons.Cube)}
+                    <span className="side-row-label">{Text(block.Name)}</span>
+                    <span className={block.Kind == "theme" ? "block-kind is-theme" : "block-kind"}>
+                        {Text(block.Kind == "theme" ? "Theme" : "Content")}
+                    </span>
+                </button>);
+        }
+
+        List<Node> treeRows = [];
+        PageDoc? current = session.CurrentPage;
+
+        if (session.IsEditingBlock && current is not null)
+        {
+            foreach (PageNode node in current.Nodes)
+            {
+                AddTreeRows(treeRows, current, node, 0, session);
+            }
+        }
+
+        return (
+            <div>
+                <div className="side-group">
+                    <div className="side-group-head">
+                        <span>{Text("Library")}</span>
+                        <span className="side-group-count">{Text(blocks.Count.ToString())}</span>
+                    </div>
+                    {Show(blocks.Count == 0,
+                        <div className="side-empty">{Text("Create a block, save a page selection, or add a theme block.")}</div>)}
+                    {F(blockRows.ToArray())}
+                </div>
+
+                {Show(!session.IsEditingBlock,
+                    <div>
+                        <div className="side-section-rule" />
+                        <PrefabKit Compact={true} />
+                    </div>)}
+
+                {Show(session.IsEditingBlock,
+                    <div>
+                        <div className="side-section-rule" />
+                        <PrefabKit Compact={true} />
+                        <div className="side-section-rule" />
+                        <WidgetPalette HideSaved={true} />
+                        <div className="side-section-rule" />
+                        <div className="side-group">
+                            <div className="side-group-head">
+                                <span>{Text("Block layers")}</span>
+                                {Show(current is not null, current is null ? null : <span className="side-group-count">{Text(current.Title)}</span>)}
+                            </div>
+                            {F(treeRows.ToArray())}
+                        </div>
+                    </div>)}
+
+                {Show(session.IsEditingBlock,
+                    <div className="side-note">
+                        {Text("Drag widgets or another block into the canvas. Select any element to edit it live.")}
+                    </div>)}
+                {Show(!session.IsEditingBlock,
+                    <div className="side-note">
+                        {Text("Open a block to edit it. Blocks can be dropped into pages or into each other.")}
+                    </div>)}
+            </div>
+        );
+    }
+
+    private static void AddTreeRows(List<Node> rows, PageDoc page, PageNode node, int depth, StudioSession session)
+    {
+        bool selected = session.SelectedNodeId == node.Id;
+        bool collapsed = session.CollapsedNodes.Contains(node.Id);
+        bool hasChildren = node.HasChildren;
+        string indent = "padding-left:" + (8 + depth * 14) + "px";
+        PageNode captured = node;
+
+        List<Node> children = [];
+
+        if (hasChildren && !collapsed)
+        {
+            foreach (PageNode child in node.Children!)
+            {
+                AddTreeRows(rows, page, child, depth + 1, session);
+            }
+        }
+
+        rows.Add(
+            <div className={selected ? "tree-row is-selected" : "tree-row"}
+                attributes={new() { ["style"] = indent }}>
+                <button className="tree-twisty"
+                    title={collapsed ? "Expand" : "Collapse"}
+                    onClick={() => session.ToggleNode(captured.Id)}>
+                    {Show(hasChildren, Ui.Icon(collapsed ? Icons.ChevronRight : Icons.ChevronDown))}
+                </button>
+                <button className="tree-main" onClick={() => session.SelectNode(captured.Id)}>
+                    {Ui.Icon(node.Tag == "block" ? Icons.Cube : Icons.ForTag(node.Tag), "tree-icon")}
+                    <span className="tree-label">{Text(NodeLabel(session, node))}</span>
+                    {Show(node.Tag == "block", <span className="tree-badge">{Text("Block")}</span>)}
+                    {Show(node.Tag == "collection", <span className="tree-badge">{Text("Data")}</span>)}
+                </button>
+            </div>);
+    }
+
+    private static string NodeLabel(StudioSession session, PageNode node)
+    {
+        if (node.Tag == "block"
+            && node.Attrs is not null
+            && node.Attrs.TryGetValue("block", out string? id)
+            && session.Project?.Block(id) is { } block)
+        {
+            return "Block · " + block.Name;
+        }
+
+        return node.DisplayName();
+    }
+
+    private static Node DataSidebar(StudioSession session)
+    {
+        List<Node> rows = [];
+        List<DataSchema> schemas = session.Project?.Schemas ?? [];
+
+        foreach (DataSchema schema in schemas)
+        {
+            DataSchema captured = schema;
+            bool active = session.CurrentSchema?.Name == schema.Name;
+            int relations = schema.Relations().Count();
+            rows.Add(
+                <button className={active ? "side-row is-active" : "side-row"}
+                    title={schema.Description}
+                    onClick={() => session.SelectSchema(captured.Name, openContent: false)}>
+                    {Ui.Icon(schema.Icon)}
+                    <span className="side-row-label">{Text(schema.Name)}</span>
+                    <span className="side-count">{Text(relations > 0 ? relations + " rel" : (session.Project?.CountOf(schema) ?? 0).ToString())}</span>
+                </button>);
+        }
+
+        return (
+            <div>
+                <div className="side-group">
+                    <div className="side-group-head">
+                        <span>{Text("Types")}</span>
+                        <span className="side-group-count">{Text(schemas.Count.ToString())}</span>
+                    </div>
+                    {F(rows.ToArray())}
+                </div>
+
+                <div className="side-note">
+                    {Text("Types define fields. Relationships connect records across types and are published as ids.")}
+                </div>
+            </div>
+        );
+    }
+
+    private static Node AutomationSidebar(StudioSession session)
+    {
+        List<Node> rows = [];
+
+        foreach ((string id, string label, string icon, string description, bool scoped) in StudioSession.Events)
+        {
+            string captured = id;
+            int count = session.HandlersFor(id).Count;
+            bool active = session.SelectedEvent == id;
+            rows.Add(
+                <button className={active ? "side-row is-active" : "side-row"}
+                    title={description}
+                    onClick={() =>
+                    {
+                        session.SelectEvent(captured);
+                        session.SelectHandler(session.HandlersFor(captured).FirstOrDefault()?.Id);
+                    }}>
+                    {Ui.Icon(icon)}
+                    <span className="side-row-label">{Text(label)}</span>
+                    <span className="side-count">{Text(count.ToString())}</span>
+                </button>);
+        }
+
+        return (
+            <div>
+                <div className="side-group">
+                    <div className="side-group-head">
+                        <span>{Text("When this happens")}</span>
+                    </div>
+                    {F(rows.ToArray())}
+                </div>
+
+                <div className="side-note">
+                    {Text("Handlers run in order. Conditions are checked first; actions are applied one by one.")}
+                </div>
+            </div>
+        );
+    }
+
+    private static Node DevelopmentSidebar(StudioSession session)
+    {
+        List<Node> rows = [];
+
+        foreach (DevSection section in ModeInfo.DevSections)
+        {
+            DevSection captured = section;
+            bool active = session.DevSection == section;
+            rows.Add(
+                <button className={active ? "side-row is-active" : "side-row"}
+                    onClick={() => session.SelectDevSection(captured)}>
+                    {Ui.Icon(ModeInfo.DevIcon(section))}
+                    <span className="side-row-label">{Text(ModeInfo.DevLabel(section))}</span>
+                </button>);
+        }
+
+        return (
+            <div>
+                <div className="side-group">
+                    <div className="side-group-head">
+                        <span>{Text("Workspace")}</span>
+                    </div>
+                    {F(rows.ToArray())}
+                </div>
+
+                <div className="side-section-rule" />
+
+                <div className="side-note">
+                    {Text("Theme, plugins, generated APIs and static builds all live here.")}
+                </div>
+            </div>
+        );
+    }
+}

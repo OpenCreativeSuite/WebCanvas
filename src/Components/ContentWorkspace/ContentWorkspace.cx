@@ -1,0 +1,344 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>The CMS workspace: a record list beside a focused editor.</summary>
+public sealed class ContentWorkspace : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        DataSchema? schema = session.CurrentSchema;
+
+        return (
+            <div className="workspace">
+                <div className="mode-bar">
+                    <div className="mode-bar-title">
+                        {Ui.Icon(Icons.Content)}
+                        <span>{Text("Content")}</span>
+                    </div>
+                    <div className="mode-bar-crumb">
+                        {Ui.Icon(Icons.ChevronRight)}
+                        <span>{Text(session.ContentMapOpen ? "Map" : schema?.Name ?? "Content")}</span>
+                    </div>
+                    <div className="view-switch">
+                        <button className={session.ContentMapOpen ? "view-btn is-active" : "view-btn"}
+                            onClick={session.OpenContentMap}>{Text("Map")}</button>
+                        <button className={!session.ContentMapOpen ? "view-btn is-active" : "view-btn"}
+                            onClick={session.OpenContentRecords}>{Text("Records")}</button>
+                    </div>
+                    <span className="flex-spacer" />
+                    <div className="mode-bar-actions">
+                        {Show(!session.ContentMapOpen && schema is not null,
+                            Ui.Button("Model", () => session.OpenTab(StudioMode.Data, schema!.Name, schema.Name, Icons.Data), "ghost", Icons.Data, small: true))}
+                        {Show(!session.ContentMapOpen && schema is not null,
+                            Ui.Button("New " + (schema?.Name ?? "record"), () => session.NewEntity(schema), "primary", Icons.Plus, small: true))}
+                        {Show(session.ContentMapOpen,
+                            Ui.Button("New type", session.NewSchema, "secondary", Icons.Plus, small: true))}
+                    </div>
+                </div>
+
+                {Show(session.ContentMapOpen, <ContentMap />)}
+
+                {Show(!session.ContentMapOpen && schema is null,
+                    <div className="workspace-empty">
+                        <div className="empty-icon">{Ui.Icon(Icons.Newspaper)}</div>
+                        <div className="workspace-empty-title">{Text("Your content lives here.")}</div>
+                        <div className="workspace-empty-copy">
+                            {Text("Create a data type first, then add, search and relate records. The list and editor will appear side by side.")}
+                        </div>
+                        {Ui.Button("Create a data type", session.NewSchema, "primary", Icons.Plus)}
+                    </div>)}
+
+                {Show(!session.ContentMapOpen && schema is not null, schema is null ? null :
+                    <div className="content-split">
+                        {EntityList(session, schema)}
+                        {EntityEditor(session, schema)}
+                    </div>)}
+            </div>
+        );
+    }
+
+    // --------------------------------------------------------------- the list
+
+    private static Node EntityList(StudioSession session, DataSchema schema)
+    {
+        List<Node> rows = [];
+        List<EntityDoc> entities = session.FilteredEntities(schema);
+        List<(string Value, string Label)> filters = session.EntityFilters(schema);
+        List<Node> filterChips = [];
+
+        foreach ((string filterValue, string filterLabel) in filters)
+        {
+            string captured = filterValue;
+            bool active = session.EntityFilter == filterValue;
+            filterChips.Add(
+                <button className={active ? "filter-chip is-active" : "filter-chip"}
+                    onClick={() => session.SetEntityFilter(captured)}>
+                    {Text(filterLabel)}
+                </button>);
+        }
+
+        string primaryName = schema.PrimaryField()?.Name ?? "";
+
+        foreach (EntityDoc entity in entities)
+        {
+            EntityDoc captured = entity;
+            bool selected = session.SelectedEntityId == entity.Id;
+            string title = session.Project?.TitleOf(schema, entity) ?? entity.Id;
+
+            rows.Add(
+                <button className={selected ? "entity-row is-selected" : "entity-row"}
+                    onClick={() => session.SelectEntity(captured.Id)}>
+                    <div className="entity-row-top">
+                        <span className="entity-row-title">{Text(string.IsNullOrWhiteSpace(title) ? "Untitled " + schema.Name : title)}</span>
+                        <span className="entity-row-time">{Text(Ids.Relative(entity.UpdatedAt))}</span>
+                    </div>
+                    <div className="entity-row-bottom">
+                        <span className="entity-row-sub">{Text(session.EntitySubtitle(schema, entity))}</span>
+                        <span className="badge">{Text(session.EntityBadge(schema, entity))}</span>
+                    </div>
+                </button>);
+        }
+
+        return (
+            <div className="entity-list">
+                <div className="entity-list-head">
+                    <div>
+                        <div className="entity-list-title">{Text(schema.Plural)}</div>
+                        <div className="entity-list-count">
+                            {Text(entities.Count + (session.EntitySearch.Length > 0 ? " matching" : " records"))}
+                        </div>
+                    </div>
+                    {Ui.IconButton(Icons.Plus, "New " + schema.Name, () => session.NewEntity(schema))}
+                </div>
+
+                <div className="entity-list-search">
+                    <div className="search-box">
+                        {Ui.Icon(Icons.Search)}
+                        <input className="text-input"
+                            type="search"
+                            value={session.EntitySearch}
+                            placeholder={"Search " + schema.Plural + "…"}
+                            onInput={value => { session.EntitySearch = value; session.MarkChanged(); }}
+                            onFocus={() => session.IsTyping = true}
+                            onBlur={() => session.IsTyping = false} />
+                    </div>
+                    {Show(filters.Count > 2,
+                        <div className="filter-row">{F(filterChips.ToArray())}</div>)}
+                </div>
+
+                <div className="entity-list-body">
+                    {Show(rows.Count == 0,
+                        <div className="entity-list-empty">
+                            {Show(session.EntitySearch.Length > 0,
+                                <div>{Text("No records match “" + session.EntitySearch + "”.")}</div>)}
+                            {Show(session.EntitySearch.Length == 0,
+                                <div>{Text("No " + schema.Plural + " yet. Add the first one.")}</div>)}
+                            {Ui.Button("New " + schema.Name, () => session.NewEntity(schema), "secondary", Icons.Plus, small: true)}
+                        </div>)}
+                    {F(rows.ToArray())}
+                </div>
+
+            </div>
+        );
+    }
+
+    // ------------------------------------------------------------- the editor
+
+    private static Node EntityEditor(StudioSession session, DataSchema schema)
+    {
+        EntityDoc? entity = session.CurrentEntity;
+
+        if (entity is null)
+        {
+            return (
+                <div className="entity-editor is-empty">
+                    {Ui.Empty(Icons.Pencil,
+                        "Select a " + schema.Name.ToLowerInvariant(),
+                        "Choose a record from the list, or start a new one.",
+                        Ui.Button("New " + schema.Name, () => session.NewEntity(schema), "secondary", Icons.Plus))}
+                </div>
+            );
+        }
+
+        EntityDoc record = entity;
+        DataField? primary = schema.PrimaryField();
+        List<DataField> fields = schema.Fields;
+        int direct = Math.Min(3, fields.Count);
+        List<string> missing = Missing(schema, entity);
+
+        return (
+            <div className="entity-editor">
+                <div className="entity-editor-inner">
+                    <header className="entity-header">
+                        <div className="entity-header-main">
+                            <input className="entity-title-input"
+                                type="text"
+                                value={primary is null ? session.Project?.TitleOf(schema, entity) ?? "" : entity.Get(primary.Name)}
+                                placeholder={"Untitled " + schema.Name}
+                                onChange={value =>
+                                {
+                                    if (primary is not null)
+                                    {
+                                        session.SetEntityValue(schema, record, primary.Name, value);
+                                    }
+                                }}
+                                onFocus={() => session.IsTyping = true}
+                                onBlur={() => session.IsTyping = false} />
+                            <div className="entity-header-meta">
+                                <span className="badge tone-accent">{Text(schema.Name)}</span>
+                                <span className="badge">{Text(session.EntityBadge(schema, entity))}</span>
+                                <span>{Text("Updated " + Ids.Relative(entity.UpdatedAt))}</span>
+                                <span className="mono entity-id">{Text(entity.Id)}</span>
+                            </div>
+                        </div>
+                        <div className="inline-actions">
+                            {Ui.IconButton(Icons.Copy, "Duplicate record", () => session.DuplicateEntity(schema, record))}
+                            {Ui.IconButton(Icons.Delete, "Delete record", () => session.DeleteEntity(schema, record), extra: "is-danger")}
+                        </div>
+                    </header>
+
+                    {Show(missing.Count > 0,
+                        <div className="form-warning">
+                            {Ui.Icon(Icons.Warning)}
+                            <span>{Text("Still needed: " + string.Join(", ", missing) + ".")}</span>
+                        </div>)}
+
+                    <div className="entity-form">
+                        {Each(fields.Take(direct), field => FieldEditor(session, schema, entity, field))}
+
+                        {Show(fields.Count > direct,
+                            Ui.Section(session, "entity-more", "More fields",
+                                <div>{Each(fields.Skip(direct), field => FieldEditor(session, schema, entity, field))}</div>,
+                                subtitle: (fields.Count - direct).ToString()))}
+
+                        {Show(fields.Count == 0,
+                            <div className="entity-form-empty">
+                                {Text("This type has no fields yet.")}
+                                {Ui.Button("Add a field", () => session.OpenTab(StudioMode.Data, schema.Name, schema.Name, Icons.Data), "secondary", Icons.Plus, small: true)}
+                            </div>)}
+                    </div>
+
+                    {Ui.Section(session, "record-meta", "Record",
+                        <div>
+                            {Ui.Meta("Id", entity.Id)}
+                            {Ui.Meta("Created", Ids.Relative(entity.CreatedAt))}
+                            {Ui.Meta("Updated", Ids.Relative(entity.UpdatedAt))}
+                            {Ui.Meta("Folder", "app/data/" + Ids.Slug(schema.Plural) + "/entities")}
+                        </div>)}
+                </div>
+            </div>
+        );
+    }
+
+    private static Node FieldEditor(StudioSession session, DataSchema schema, EntityDoc entity, DataField field)
+    {
+        string value = entity.Get(field.Name);
+        string label = field.Display + (field.Required ? " *" : "");
+        string? hint = field.Help;
+
+        if (field.Type == FieldTypes.Relation)
+        {
+            List<(string Value, string Label)> options =
+            [
+                ("", "— None —"),
+            ];
+
+            if (field.Target is not null && session.Project?.Schema(field.Target) is { } target)
+            {
+                foreach (EntityDoc related in session.Project.EntityList(target))
+                {
+                    options.Add((related.Id, session.Project.TitleOf(target, related)));
+                }
+
+                hint = "Links to " + target.Name + ".";
+            }
+
+            return Ui.Field(label,
+                Ui.Select(session, options, value, selected => session.SetEntityValue(schema, entity, field.Name, selected)),
+                hint);
+        }
+
+        switch (field.Type)
+        {
+            case FieldTypes.LongText:
+            case FieldTypes.RichText:
+                return Ui.Field(label,
+                    Ui.TextArea(session, value, text => session.SetEntityValue(schema, entity, field.Name, text), "Write here…", rows: field.Type == FieldTypes.RichText ? 8 : 4),
+                    hint);
+
+            case FieldTypes.Boolean:
+                return Ui.Field(label,
+                    Ui.Toggle(entity.Flag(field.Name), on => session.SetEntityValue(schema, entity, field.Name, on ? "true" : "false"), field.Required ? "On" : "Off"),
+                    hint);
+
+            case FieldTypes.Select:
+                return Ui.Field(label,
+                    Ui.Select(session,
+                        (field.Options ?? new List<string>()).Select(option => (option, option)),
+                        value,
+                        selected => session.SetEntityValue(schema, entity, field.Name, selected)),
+                    hint);
+
+            case FieldTypes.Date:
+                return Ui.Field(label,
+                    Ui.Input(session, value, text => session.SetEntityValue(schema, entity, field.Name, text), "2026-11-25"),
+                    hint);
+
+            case FieldTypes.Number:
+                return Ui.Field(label,
+                    Ui.Input(session, value, text => session.SetEntityValue(schema, entity, field.Name, text), "0"),
+                    hint);
+
+            case FieldTypes.Image:
+                return Ui.Field(label,
+                    <div>
+                        {Ui.Input(session, value, text => session.SetEntityValue(schema, entity, field.Name, text), "assets/photo.jpg")}
+                        {Show(!string.IsNullOrWhiteSpace(value),
+                            <div className="image-preview">
+                                <img src={ImagePath(session, value)} alt={field.Display} />
+                            </div>)}
+                    </div>,
+                    hint ?? "A path inside the project, or an absolute URL.");
+
+            default:
+                return Ui.Field(label,
+                    Ui.Input(session, value, text => session.SetEntityValue(schema, entity, field.Name, text), Fieldplaceholder(field)),
+                    hint);
+        }
+    }
+
+    private static string Fieldplaceholder(DataField field) => field.Type switch
+    {
+        FieldTypes.Url => "https://example.com",
+        FieldTypes.Image => "assets/photo.jpg",
+        _ => "Enter " + field.Display.ToLowerInvariant(),
+    };
+
+    private static string ImagePath(StudioSession session, string value)
+    {
+        if (value.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+        {
+            return value;
+        }
+
+        if (session.Project is null)
+        {
+            return value;
+        }
+
+        return System.IO.Path.Combine(session.Project.Root, value.Replace('/', System.IO.Path.DirectorySeparatorChar));
+    }
+
+    private static List<string> Missing(DataSchema schema, EntityDoc entity) =>
+        schema.Fields
+            .Where(field => field.Required && string.IsNullOrWhiteSpace(entity.Get(field.Name)))
+            .Select(field => field.Display)
+            .ToList();
+}

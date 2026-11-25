@@ -1,0 +1,255 @@
+﻿/* Design canvas, page paper, drag wireframe and drop preview. */
+
+.design-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+}
+
+.canvas-stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background-color: var(--bg-canvas);
+}
+
+.canvas-caption {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 29px;
+    padding: 0 14px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--line-soft);
+    background-color: var(--bg-canvas);
+    color: var(--text-faint);
+    font-size: 9px;
+    overflow: hidden;
+}
+
+.canvas-caption-title {
+    flex-shrink: 0;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.canvas-caption-url {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.canvas-caption-size {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.canvas-drag-banner {
+    position: absolute;
+    left: 50%;
+    top: 41px;
+    z-index: 70;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-left: -132px;
+    width: 264px;
+    height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--accent);
+    border-radius: 15px;
+    background-color: var(--bg-panel);
+    box-shadow: var(--shadow-md);
+    color: var(--accent);
+    font-size: 9.5px;
+    font-weight: 600;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    pointer-events: none;
+}
+
+.canvas-drag-banner .fa {
+    font-size: 9px;
+}
+
+.drop-map {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 12;
+    pointer-events: none;
+}
+
+.drop-map-box {
+    position: absolute;
+    border: 1px solid rgba(45, 91, 209, 0.42);
+    border-radius: 3px;
+    background-color: rgba(45, 91, 209, 0.025);
+}
+
+.drop-map-box.is-block {
+    border-color: rgba(45, 91, 209, 0.72);
+}
+
+.drop-map-box.is-page {
+    border-color: rgba(45, 91, 209, 0.22);
+    background-color: transparent;
+}
+
+.drop-map-box.is-page .drop-map-label {
+    left: auto;
+    right: 0;
+    border-radius: 0 0 0 4px;
+    background-color: rgba(45, 91, 209, 0.7);
+}
+
+.drop-map-box.is-deep {
+    border-style: dashed;
+    border-color: rgba(45, 91, 209, 0.26);
+}
+
+.drop-map-box.is-target {
+    border: 2px solid var(--accent);
+    background-color: rgba(45, 91, 209, 0.14);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+
+.drop-map-label {
+    position: absolute;
+    left: 0;
+    top: 0;
+    padding: 2px 7px;
+    border-radius: 0 0 4px 0;
+    background-color: rgba(45, 91, 209, 0.92);
+    color: #ffffff;
+    font-family: "Segoe UI", sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+
+.drop-map-box.is-target .drop-map-label {
+    background-color: var(--accent);
+}
+
+.drop-preview {
+    position: fixed;
+    z-index: 140;
+    height: 72px;
+    border: 2px dashed var(--accent);
+    border-radius: 8px;
+    background-color: rgba(45, 91, 209, 0.10);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+    pointer-events: none;
+}
+
+.drop-preview-chip {
+    position: absolute;
+    left: 12px;
+    top: 24px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 24px;
+    padding: 0 9px;
+    border-radius: 12px;
+    background-color: var(--accent);
+    color: #ffffff;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    box-shadow: var(--shadow-sm);
+}
+
+.drop-preview-chip .fa {
+    font-size: 8px;
+}
+
+.canvas-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 28px 32px 56px;
+    scrollbar-width: thin;
+}
+
+.canvas-slot {
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+.canvas-paper {
+    position: relative;
+    min-height: 640px;
+    overflow: hidden;
+    transform-origin: top left;
+    background-color: #ffffff;
+    border-radius: 2px;
+    box-shadow:
+        0 0 0 1px var(--line-strong),
+        0 18px 48px rgba(22, 28, 39, 0.14);
+}
+
+.canvas-paper.is-wireframe .wc-canvas > * {
+    opacity: 0;
+}
+
+.canvas-paper.is-wireframe .wc-canvas {
+    background-color: #ffffff;
+}
+
+.app.is-dark .canvas-paper {
+    box-shadow:
+        0 0 0 1px #343b47,
+        0 22px 60px rgba(0, 0, 0, 0.62);
+}
+
+.canvas-paper .wc-canvas {
+    min-height: 640px;
+}
+
+.canvas-paper.is-block {
+    min-height: 240px;
+}
+
+.canvas-paper.is-block .wc-canvas {
+    min-height: 240px;
+}
+
+.canvas-preview-badge {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    width: 254px;
+    margin-left: -127px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 26px;
+    border: 1px solid var(--line-strong);
+    border-radius: 13px;
+    background-color: var(--bg-panel);
+    box-shadow: var(--shadow-md);
+    color: var(--text-muted);
+    font-size: 9.5px;
+}
+
+.canvas-preview-badge .fa {
+    font-size: 9px;
+    color: var(--accent);
+}
+

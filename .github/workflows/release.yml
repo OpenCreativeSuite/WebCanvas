@@ -1,0 +1,125 @@
+name: Build and release PixelDotNet
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, for example v1.0.0"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            os: windows-latest
+            rid: win-x64
+            artifact: PixelDotNet-win-x64
+            archive: PixelDotNet-win-x64.zip
+
+          - name: Linux x64
+            os: ubuntu-latest
+            rid: linux-x64
+            artifact: PixelDotNet-linux-x64
+            archive: PixelDotNet-linux-x64.tar.gz
+
+          - name: macOS Apple Silicon
+            os: macos-latest
+            rid: osx-arm64
+            artifact: PixelDotNet-macos-arm64
+            archive: PixelDotNet-macos-arm64.tar.gz
+
+          - name: macOS Intel
+            os: macos-latest
+            rid: osx-x64
+            artifact: PixelDotNet-macos-x64
+            archive: PixelDotNet-macos-x64.tar.gz
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Install CSX tool
+        run: dotnet tool install --global CSX.CliTool --version 1.0.1
+
+      - name: Transform CSX sources
+        run: csx build --configuration Release
+
+      - name: Publish
+        # Silk.NET's native loader resolves glfw3.dll from the app base directory
+        # and Assembly.Location, both of which break under PublishSingleFile
+        # (the native lib is extracted to a temp folder that Silk.NET never
+        # searches). Publishing a normal folder keeps the native dll next to the
+        # executable, which is what makes GlfwPlatform applicable.
+        run: >
+          dotnet publish PixelDotNet.csproj
+          --configuration Release
+          --runtime ${{ matrix.rid }}
+          --self-contained true
+          --output publish
+          -p:PublishSingleFile=false
+          -p:IncludeNativeLibrariesForSelfExtract=false
+          -p:PublishTrimmed=false
+          -p:DebugType=None
+          -p:DebugSymbols=false
+
+      - name: Package for Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path publish/* -DestinationPath "${{ matrix.archive }}" -Force
+
+      - name: Package for Linux and macOS
+        if: runner.os != 'Windows'
+        shell: bash
+        run: tar -czf "${{ matrix.archive }}" -C publish .
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.archive }}
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub release
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all builds
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: List release files
+        run: ls -lh dist
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          name: PixelDotNet ${{ inputs.tag || github.ref_name }}
+          files: dist/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          make_latest: true

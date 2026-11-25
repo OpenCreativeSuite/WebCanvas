@@ -1,0 +1,161 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>The data relationship map shown by default in Content.</summary>
+public sealed class ContentMap : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        WcProject? project = session.Project;
+
+        if (project is null)
+        {
+            return <div className="content-map">{Ui.Empty(Icons.Graph, "No project", "Open a project to see its content map.")}</div>;
+        }
+
+        if (project.Schemas.Count == 0)
+        {
+            return (
+                <div className="content-map">
+                    {Ui.Empty(Icons.Graph,
+                        "Your content map starts here",
+                        "Create your first data type. Once types reference each other, the map shows how the whole model connects.",
+                        Ui.Button("Create a data type", session.NewSchema, "primary", Icons.Plus))}
+                </div>
+            );
+        }
+
+        GraphCanvasModel graph = Build(project);
+
+        return (
+            <div className="content-map">
+                <div className="map-head">
+                    <div>
+                        <div className="map-title">{Text("Relationship map")}</div>
+                        <div className="map-sub">
+                            {Text(project.Schemas.Count + " types · " + project.Schemas.Sum(schema => schema.Relations().Count()) + " relationships · click a type to open its collection")}
+                        </div>
+                    </div>
+                    <div className="map-legend">
+                        <span className="map-legend-item"><span className="map-legend-line" />{Text("references")}</span>
+                    </div>
+                </div>
+
+                <GraphView Graph={graph}
+                    SelectedId={session.SelectedSchemaName}
+                    OnSelect={id => session.SelectSchema(id)} />
+            </div>
+        );
+    }
+
+    public static GraphCanvasModel Build(WcProject project)
+    {
+        var graph = new GraphCanvasModel();
+        Dictionary<string, int> depths = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, int> rows = new(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> visiting = new(StringComparer.OrdinalIgnoreCase);
+
+        foreach (DataSchema schema in project.Schemas)
+        {
+            Depth(schema, project, depths, visiting);
+        }
+
+        int maxDepth = 0;
+        int maxRows = 0;
+
+        foreach (DataSchema schema in project.Schemas.OrderBy(schema => schema.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            int depth = depths.TryGetValue(schema.Name, out int value) ? value : 0;
+            maxDepth = Math.Max(maxDepth, depth);
+            rows.TryGetValue(depth.ToString(), out int row);
+            rows[depth.ToString()] = row + 1;
+            maxRows = Math.Max(maxRows, row + 1);
+
+            var node = new GraphNodeModel
+            {
+                Id = schema.Name,
+                Title = schema.Name,
+                Subtitle = project.CountOf(schema) + " records · " + schema.Fields.Count + " fields",
+                Icon = schema.Icon,
+                Badge = !schema.Public
+                    ? "Private"
+                    : schema.Relations().Count() > 0 ? schema.Relations().Count() + " rel" : "",
+                Tone = "type",
+                X = 36 + depth * 320,
+                Y = 32 + row * 116,
+                Width = 236,
+                Height = 88,
+            };
+
+            graph.Nodes.Add(node);
+        }
+
+        foreach (DataSchema schema in project.Schemas)
+        {
+            foreach (DataField field in schema.Relations())
+            {
+                if (field.Target is null
+                    || field.Target.Equals(schema.Name, StringComparison.OrdinalIgnoreCase)
+                    || project.Schema(field.Target) is null)
+                {
+                    continue;
+                }
+
+                graph.Edges.Add(new GraphEdgeModel
+                {
+                    From = schema.Name,
+                    To = field.Target,
+                    Label = field.Name,
+                });
+            }
+        }
+
+        graph.Width = Math.Max(760, 36 + (maxDepth + 1) * 320);
+        graph.Height = Math.Max(360, 32 + maxRows * 116 + 24);
+        return graph;
+    }
+
+    private static int Depth(
+        DataSchema schema,
+        WcProject project,
+        Dictionary<string, int> depths,
+        HashSet<string> visiting)
+    {
+        if (depths.TryGetValue(schema.Name, out int known))
+        {
+            return known;
+        }
+
+        if (!visiting.Add(schema.Name))
+        {
+            return 0;
+        }
+
+        int depth = 0;
+
+        foreach (DataField field in schema.Relations())
+        {
+            if (field.Target is null || project.Schema(field.Target) is not { } target)
+            {
+                continue;
+            }
+
+            if (target.Name.Equals(schema.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            depth = Math.Max(depth, Depth(target, project, depths, visiting) + 1);
+        }
+
+        visiting.Remove(schema.Name);
+        depth = Math.Min(depth, 5);
+        depths[schema.Name] = depth;
+        return depth;
+    }
+}

@@ -1,0 +1,78 @@
+﻿/* New-project dialog template choices. */
+
+.template-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.template-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 13px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background-color: var(--bg-panel);
+    text-align: left;
+}
+
+.template-option:hover {
+    border-color: var(--line-strong);
+    background-color: var(--bg-hover);
+}
+
+.template-option.is-selected {
+    border-color: var(--accent);
+    background-color: var(--accent-soft);
+}
+
+.template-mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    background-color: var(--bg-active);
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.template-option.is-selected .template-mark {
+    background-color: var(--accent);
+    color: var(--on-accent);
+}
+
+.template-copy {
+    flex: 1;
+    min-width: 0;
+}
+
+.template-title {
+    margin-bottom: 2px;
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--text);
+}
+
+.template-desc {
+    font-size: 10.5px;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+
+.template-check {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--accent);
+    color: var(--on-accent);
+    font-size: 8px;
+}
+

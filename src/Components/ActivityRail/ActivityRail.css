@@ -1,0 +1,69 @@
+﻿/* Mode activity rail. */
+
+.rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 58px;
+    flex-shrink: 0;
+    padding: 8px 0;
+    gap: 2px;
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid var(--line);
+}
+
+.rail-btn {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    color: var(--text-faint);
+}
+
+.rail-btn .fa {
+    font-size: 15px;
+}
+
+.rail-label {
+    font-size: 9px;
+    letter-spacing: 0.005em;
+}
+
+.rail-btn:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.rail-btn.is-active {
+    background-color: var(--accent-soft);
+    color: var(--accent);
+}
+
+.rail-btn.is-active::before {
+    content: "";
+    position: absolute;
+    left: -5px;
+    top: 13px;
+    bottom: 13px;
+    width: 2px;
+    border-radius: 2px;
+    background-color: var(--accent);
+}
+
+.rail-spacer {
+    flex: 1;
+    min-height: 8px;
+}
+
+.rail-sep {
+    width: 22px;
+    height: 1px;
+    margin: 5px 0;
+    background-color: var(--line);
+}
+

@@ -1,0 +1,304 @@
+﻿/* Data model workspace: schema header, fields and outputs. */
+
+/* ------------------------------------------------------------------- data */
+
+.schema-page {
+    width: 100%;
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 30px 38px 64px;
+}
+
+.schema-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.schema-mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background-color: var(--accent-soft);
+    color: var(--accent);
+    font-size: 18px;
+}
+
+.schema-heading {
+    flex: 1;
+    min-width: 0;
+}
+
+.schema-title {
+    margin-bottom: 3px;
+    color: var(--text-strong);
+    font-size: 26px;
+    font-weight: 650;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+}
+
+.schema-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    font-size: 9.5px;
+    color: var(--text-faint);
+}
+
+.schema-dot {
+    color: var(--text-faint);
+    opacity: 0.6;
+}
+
+.schema-description {
+    max-width: 620px;
+}
+
+.schema-section {
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line-soft);
+}
+
+.schema-section.is-quiet {
+    margin-top: 18px;
+    padding-top: 0;
+    border-top: 0;
+}
+
+.schema-section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 13px;
+}
+
+.schema-section-title {
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+}
+
+.schema-section-copy {
+    max-width: 530px;
+    margin-top: 3px;
+    font-size: 10.5px;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+
+.field-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.field-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 9px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background-color: var(--bg-sunken);
+}
+
+.field-card:hover {
+    background-color: var(--bg-hover);
+}
+
+.field-card.is-selected {
+    border-color: var(--accent-line);
+    background-color: var(--accent-soft);
+}
+
+.field-grip {
+    width: 8px;
+    flex-shrink: 0;
+    color: var(--text-faint);
+    font-size: 9px;
+    opacity: 0.55;
+}
+
+.field-type-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 27px;
+    height: 27px;
+    flex-shrink: 0;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background-color: var(--bg-panel);
+    color: var(--text-muted);
+    font-size: 9.5px;
+}
+
+.field-card-copy {
+    flex: 1;
+    min-width: 0;
+}
+
+.field-card-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    color: var(--text);
+    font-size: 11.5px;
+    font-weight: 600;
+}
+
+.field-card-title .badge {
+    height: 16px;
+    font-size: 8px;
+}
+
+.field-card-sub {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 1px;
+    font-size: 9.5px;
+    color: var(--text-faint);
+}
+
+.field-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    opacity: 0;
+}
+
+.field-card:hover .field-card-actions,
+.field-card.is-selected .field-card-actions {
+    opacity: 1;
+}
+
+.field-card-actions .icon-btn {
+    width: 23px;
+    height: 23px;
+    font-size: 8.5px;
+}
+
+.field-list-empty {
+    padding: 20px;
+    border: 1px dashed var(--line-strong);
+    border-radius: 8px;
+    text-align: center;
+    font-size: 10.5px;
+    color: var(--text-faint);
+}
+
+.field-type-menu {
+    margin-bottom: 13px;
+    padding: 11px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background-color: var(--bg-sunken);
+}
+
+.field-type-menu-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 9px;
+    font-size: 10.5px;
+    font-weight: 650;
+    color: var(--text);
+}
+
+.field-type-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 3px;
+}
+
+.field-type-option {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 7px;
+    border-radius: 6px;
+    text-align: left;
+}
+
+.field-type-option:hover {
+    background-color: var(--bg-panel);
+}
+
+.field-type-mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 25px;
+    flex-shrink: 0;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background-color: var(--bg-panel);
+    color: var(--accent);
+    font-size: 9px;
+}
+
+.field-type-copy {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.field-type-name {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.field-type-desc {
+    font-size: 9px;
+    color: var(--text-faint);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.schema-output {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background-color: var(--bg-sunken);
+}
+
+.schema-output-title {
+    font-size: 11.5px;
+    font-weight: 650;
+    color: var(--text);
+}
+
+.schema-output-copy {
+    max-width: 520px;
+    margin-top: 2px;
+    font-size: 10px;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+
+.schema-output-links {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+

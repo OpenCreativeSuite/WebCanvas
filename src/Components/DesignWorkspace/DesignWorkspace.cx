@@ -1,0 +1,96 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>The Illustrator-inspired design workspace: a canvas between tree and inspector.</summary>
+public sealed class DesignWorkspace : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        PageDoc? page = session.CurrentPage;
+        bool editing = session.CanvasEditing;
+
+        return (
+            <div className="workspace">
+                <div className="design-bar">
+                    <div className="design-bar-left">
+                        {Ui.Icon(session.IsEditingBlock ? Icons.Cube : Icons.Design, "design-mode-icon")}
+                        <span className="design-page-title">{Text(page?.Title ?? "Design")}</span>
+                        {Show(session.IsEditingBlock, <span className="design-block-badge">{Text("Reusable block")}</span>)}
+                        {Show(!session.IsEditingBlock && page is not null, page is null ? null :
+                            <span className="design-page-url mono">{Text(page.IsHome ? "/" : "/" + page.Slug + "/")}</span>)}
+                    </div>
+
+                    <div className="design-bar-center">
+                        <div className="inline-actions">
+                            {Ui.IconButton(Icons.Undo, "Undo (Ctrl+Z)", session.Undo, enabled: session.CanUndo)}
+                            {Ui.IconButton(Icons.Redo, "Redo (Ctrl+Shift+Z)", session.Redo, enabled: session.CanRedo)}
+                        </div>
+                        <span className="design-bar-sep" />
+                        <div className="viewport-switch">
+                            {ViewportButton(session, "desktop", Icons.Desktop, "Desktop", 1200)}
+                            {ViewportButton(session, "tablet", Icons.Tablet, "Tablet", 834)}
+                            {ViewportButton(session, "mobile", Icons.Mobile, "Mobile", 390)}
+                        </div>
+                        <span className="design-bar-sep" />
+                        <div className="zoom-group">
+                            <button className="zoom-step" title="Zoom out" onClick={() => session.ZoomBy(-25)}>
+                                {Text("−")}
+                                <span className="control-tip">{Text("Zoom out")}</span>
+                            </button>
+                            <button className="zoom-value" title="Reset zoom" onClick={() => session.SetZoom(100)}>
+                                {Text(session.Preferences.DesignZoom + "%")}
+                            </button>
+                            <button className="zoom-step" title="Zoom in" onClick={() => session.ZoomBy(25)}>
+                                {Text("+")}
+                                <span className="control-tip">{Text("Zoom in")}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="design-bar-right">
+                        {Show(session.IsEditingBlock,
+                            Ui.Button("Done", session.CloseBlock, "secondary", Icons.Check, small: true,
+                                title: "Leave the block editor"))}
+                        <button className={editing ? "btn small ghost" : "btn small primary"}
+                            title={editing ? "Preview on the canvas" : "Return to canvas editing"}
+                            onClick={session.ToggleCanvasEditing}>
+                            {Ui.Icon(editing ? Icons.Eye : Icons.Pencil)}
+                            {Text(editing ? "Canvas" : "Edit")}
+                        </button>
+                        {Show(!session.IsEditingBlock && page is not null, page is null ? null :
+                            Ui.Button("Preview", () => session.PreviewPage(page), "secondary", Icons.External,
+                                small: true, title: "Build the site and open this page in a new tab"))}
+                        <button className="icon-btn" title="Build the static site" onClick={session.RunBuild}>
+                            {Ui.Icon(Icons.Publish)}
+                            <span className="control-tip">{Text("Build the static site")}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div className="design-body">
+                    <DesignCanvas />
+                </div>
+
+            </div>
+        );
+    }
+
+    private static Node ViewportButton(StudioSession session, string id, string icon, string label, int width)
+    {
+        bool active = session.Preferences.Viewport == id;
+
+        return (
+            <button className={active ? "viewport-btn is-active" : "viewport-btn"}
+                title={label + " - " + width + " px"}
+                onClick={() => session.SetViewport(id)}>
+                {Ui.Icon(icon)}
+                <span className="control-tip">{Text(label + " · " + width + " px")}</span>
+            </button>);
+    }
+
+}

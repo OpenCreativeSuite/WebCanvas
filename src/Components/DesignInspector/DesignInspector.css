@@ -1,0 +1,158 @@
+﻿/* Design inspector, page tree rows, selection summary and colour controls. */
+
+/* ------------------------------------------------------------- tree rows */
+
+.tree-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    height: 27px;
+    padding-right: 6px;
+    border-radius: 5px;
+}
+
+.tree-row:hover {
+    background-color: var(--bg-hover);
+}
+
+.tree-row.is-selected {
+    background-color: var(--accent-soft);
+}
+
+.tree-twisty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 22px;
+    flex-shrink: 0;
+    color: var(--text-faint);
+    font-size: 7px;
+}
+
+.tree-twisty:hover {
+    color: var(--text);
+}
+
+.tree-main {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex: 1;
+    min-width: 0;
+    height: 24px;
+    text-align: left;
+    color: var(--text-muted);
+    font-size: 11.5px;
+}
+
+.tree-row.is-selected .tree-main {
+    color: var(--text);
+}
+
+.tree-icon {
+    width: 12px;
+    flex-shrink: 0;
+    font-size: 9.5px;
+    color: var(--text-faint);
+}
+
+.tree-row.is-selected .tree-icon {
+    color: var(--accent);
+}
+
+.tree-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.tree-badge {
+    flex-shrink: 0;
+    padding: 1px 5px;
+    border-radius: 8px;
+    background-color: var(--bg-active);
+    color: var(--text-faint);
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+
+
+/* Native colour inputs used by the inspector. */
+.color-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 30px;
+}
+
+.color-picker {
+    width: 36px;
+    height: 30px;
+    flex-shrink: 0;
+    padding: 0;
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    background-color: var(--bg-panel);
+    cursor: pointer;
+}
+
+.color-picker:hover {
+    border-color: var(--text-faint);
+}
+
+.color-hex {
+    color: var(--text-muted);
+    font-size: 10.5px;
+    letter-spacing: 0.02em;
+}
+
+
+/* inspector: direct access to a container's children */
+
+.node-child-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.node-child-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.node-child-main {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex: 1;
+    min-width: 0;
+    height: 26px;
+    padding: 0 6px;
+    border-radius: 5px;
+    color: var(--text-muted);
+    font-size: 10.5px;
+    text-align: left;
+}
+
+.node-child-main:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.node-child-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.zoom-group .zoom-step:last-child {
+    transform: translateY(-1px);
+}

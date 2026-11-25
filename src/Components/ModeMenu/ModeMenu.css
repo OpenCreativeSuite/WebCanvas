@@ -1,0 +1,65 @@
+﻿/* Workspace mode menu. */
+
+/* mode menu */
+
+.mode-menu-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 90;
+}
+
+.mode-menu {
+    position: absolute;
+    left: 44px;
+    top: 72px;
+    z-index: 91;
+    width: 248px;
+    padding: 5px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    background-color: var(--bg-panel);
+    box-shadow: var(--shadow-md);
+}
+
+.mode-menu-title {
+    padding: 6px 9px 5px;
+    font-size: 9px;
+    font-weight: 650;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+}
+
+.mode-menu-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    height: 32px;
+    padding: 0 9px;
+    border-radius: 6px;
+    text-align: left;
+    color: var(--text-muted);
+    font-size: 11.5px;
+}
+
+.mode-menu-row:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.mode-menu-row .fa {
+    width: 14px;
+    font-size: 10.5px;
+    color: var(--text-faint);
+}
+
+.mode-menu-hint {
+    margin-left: auto;
+    font-size: 9px;
+    color: var(--text-faint);
+}
+

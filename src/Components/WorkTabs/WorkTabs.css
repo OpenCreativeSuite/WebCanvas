@@ -1,0 +1,121 @@
+﻿/* Document tabs and tab controls. */
+
+/* ------------------------------------------------------------- work tabs */
+
+.worktabs {
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+    height: 34px;
+    padding-left: 8px;
+    background-color: var(--bg-app);
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+}
+
+.worktab {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 33px;
+    padding: 0 6px 0 12px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--line);
+    border-top: 2px solid transparent;
+    color: var(--text-muted);
+    font-size: 11.5px;
+}
+
+.worktab:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.worktab.is-active {
+    background-color: var(--bg-panel);
+    border-top-color: var(--accent);
+    color: var(--text);
+}
+
+.worktab.is-active:hover {
+    background-color: var(--bg-panel);
+}
+
+.tab-icon {
+    font-size: 10px;
+    color: var(--text-faint);
+}
+
+.worktab.is-active .tab-icon {
+    color: var(--accent);
+}
+
+.tab-title {
+    max-width: 180px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.tab-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 17px;
+    height: 17px;
+    border-radius: 4px;
+    color: var(--text-faint);
+    font-size: 8.5px;
+    opacity: 0;
+}
+
+.worktab:hover .tab-close,
+.worktab.is-active .tab-close {
+    opacity: 1;
+}
+
+.tab-close:hover {
+    background-color: var(--bg-active);
+    color: var(--text);
+}
+
+.tab-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 33px;
+    flex-shrink: 0;
+    color: var(--text-faint);
+    font-size: 10px;
+}
+
+.tab-add:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.tab-scroll-fill {
+    flex: 1;
+    min-width: 20px;
+}
+
+
+/* ----------------------------------------------------- additional shell bits */
+
+.tab-select {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 31px;
+    padding: 0 1px 0 2px;
+    flex: 1;
+    min-width: 0;
+    background-color: transparent;
+    color: inherit;
+    font-size: 11.5px;
+    text-align: left;
+}
+

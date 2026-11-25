@@ -1,0 +1,79 @@
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>The create-project flow, with the file-system folder picker.</summary>
+public sealed class CreateProjectDialog : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+
+        return (
+            <div className="overlay is-center">
+                <div className="modal is-wide">
+                    <div className="modal-head">
+                        <div className="modal-icon">{Ui.Icon(Icons.FolderPlus)}</div>
+                        <div className="modal-titles">
+                            <div className="modal-title">{Text("Create a project")}</div>
+                            <div className="modal-sub">{Text("A project is a folder of readable JSON and CSS files. Nothing is uploaded.")}</div>
+                        </div>
+                        <button className="icon-btn" title="Close" onClick={session.CloseCreateDialog}>
+                            {Ui.Icon(Icons.Close)}
+                        </button>
+                    </div>
+
+                    <div className="modal-body">
+                        {Show(session.CreateError is not null,
+                            <div className="form-error">{Text(session.CreateError ?? "")}</div>)}
+
+                        <div className="form-grid">
+                            {Ui.Field("Project name",
+                                Ui.Input(session, session.CreateName, value => session.CreateName = value, "Aster & Oak", "large", live: true))}
+
+                            {Ui.Field("Location",
+                                <div className="path-row">
+                                    <div className="readonly-field mono" title={session.CreateParent}>{Text(session.CreateParent)}</div>
+                                    {Ui.Button("Browse", session.BrowseForParent, "secondary", Icons.FolderOpen)}
+                                </div>,
+                                "The project folder is created inside this location.")}
+                        </div>
+
+                        <div className="field">
+                            <span className="field-label">{Text("Starting point")}</span>
+                            <div className="template-options">
+                                <button className={session.CreateStarter ? "template-option is-selected" : "template-option"}
+                                    onClick={() => { session.CreateStarter = true; session.MarkChanged(); }}>
+                                    <div className="template-mark">{Ui.Icon(Icons.Sparkles)}</div>
+                                    <div className="template-copy">
+                                        <div className="template-title">{Text("Studio starter")}</div>
+                                        <div className="template-desc">{Text("An editorial site with pages, journal posts, authors, case studies and automations.")}</div>
+                                    </div>
+                                    {Show(session.CreateStarter, <div className="template-check">{Ui.Icon(Icons.Check)}</div>)}
+                                </button>
+
+                                <button className={!session.CreateStarter ? "template-option is-selected" : "template-option"}
+                                    onClick={() => { session.CreateStarter = false; session.MarkChanged(); }}>
+                                    <div className="template-mark">{Ui.Icon(Icons.File)}</div>
+                                    <div className="template-copy">
+                                        <div className="template-title">{Text("Blank site")}</div>
+                                        <div className="template-desc">{Text("One home page and an empty data model. Choose this when you want to start from zero.")}</div>
+                                    </div>
+                                    {Show(!session.CreateStarter, <div className="template-check">{Ui.Icon(Icons.Check)}</div>)}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="modal-foot">
+                        <span className="modal-note">{Text("You can open or move the folder later.")}</span>
+                        {Ui.Button("Cancel", session.CloseCreateDialog, "ghost")}
+                        {Ui.Button("Create project", session.ConfirmCreate, "primary", Icons.Plus)}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+}

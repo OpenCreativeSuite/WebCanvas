@@ -1,0 +1,156 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+public sealed class WidgetPaletteProps : Props
+{
+    /// <summary>Hides the saved-block group when the Blocks tab already lists them.</summary>
+    public bool HideSaved { get; set; }
+}
+
+/// <summary>
+/// The Elementor-style widget palette. Items can be clicked into the current
+/// container or dragged onto a specific node in the canvas.
+/// </summary>
+public sealed class WidgetPalette : Component<WidgetPaletteProps>
+{
+    private static readonly string[] GroupOrder = ["Content", "Layout", "Text", "Dynamic"];
+
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        WcProject? project = session.Project;
+        bool hideSaved = Props?.HideSaved == true;
+        string query = session.WidgetSearch.Trim();
+        List<Node> groups = [];
+
+        if (project is not null && !hideSaved)
+        {
+            List<Node> saved = [];
+
+            foreach (BlockDoc block in project.Blocks
+                         .Where(session.CanInsertBlock)
+                         .Where(block => Matches(query, block.Name, block.Description, block.Category))
+                         .OrderBy(block => block.Kind)
+                         .ThenBy(block => block.Name, StringComparer.OrdinalIgnoreCase))
+            {
+                BlockDoc captured = block;
+                string payload = "block:" + block.Id;
+                saved.Add(WidgetRow(session, payload, block.Name, block.Description,
+                    block.Kind == "theme" ? Icons.Palette : Icons.Cube, true));
+            }
+
+            if (saved.Count > 0)
+            {
+                groups.Add(
+                    <div className="widgets-group">
+                        <div className="widgets-group-head">{Text("Saved blocks")}</div>
+                        <div className="widget-grid">{F(saved.ToArray())}</div>
+                    </div>);
+            }
+        }
+
+        foreach (string group in GroupOrder)
+        {
+            List<Node> items = [];
+
+            foreach (BlockPreset preset in StudioSession.Presets
+                         .Where(item => item.Group == group)
+                         .Where(item => Matches(query, item.Label, item.Description, item.Group)))
+            {
+                string payload = "preset:" + preset.Id;
+                items.Add(WidgetRow(session, payload, preset.Label, preset.Description, preset.Icon, false));
+            }
+
+            if (items.Count > 0)
+            {
+                groups.Add(
+                    <div className="widgets-group">
+                        <div className="widgets-group-head">{Text(group)}</div>
+                        <div className="widget-grid">{F(items.ToArray())}</div>
+                    </div>);
+            }
+        }
+
+        if (groups.Count == 0)
+        {
+            groups.Add(
+                <div className="widgets-empty">
+                    {Ui.Icon(Icons.Search)}
+                    {Text(query.Length == 0 ? "No widgets available." : "No widgets match “" + query + "”.")}
+                </div>);
+        }
+
+        return (
+            <div className="widgets-palette">
+                <div className="widgets-head">
+                    <span className="widgets-title">{Text("Widgets")}</span>
+                    <span className="widgets-hint">{Text("Drag or click")}</span>
+                </div>
+                {Ui.Input(session, session.WidgetSearch, session.SetWidgetSearch,
+                    "Search widgets", "widgets-search", live: true)}
+                <div className="widgets-note">
+                    {Text("Drag onto the canvas. Click to add inside the selection.")}
+                </div>
+                {F(groups.ToArray())}
+            </div>
+        );
+    }
+
+    private static Node WidgetRow(
+        StudioSession session,
+        string payload,
+        string label,
+        string description,
+        string icon,
+        bool isBlock)
+    {
+        return (
+            <button className={isBlock ? "widget-row is-block" : "widget-row"}
+                draggable={true}
+                attributes={new() { ["data-drag-label"] = label }}
+                title={"Drag " + label + " onto the canvas, or click to add it" + (description.Length > 0 ? " — " + description : "")}
+                onDragStart={e =>
+                {
+                    e.Data.SetData("application/x-webcanvas-widget", payload);
+                    e.Data.EffectAllowed = "copy";
+                    e.Data.DropEffect = "copy";
+                    session.BeginWidgetDrag(payload);
+                }}
+                onDragEnd={_ => session.EndWidgetDrag()}
+                onClick={() =>
+                {
+                    if (session.ShouldIgnoreWidgetClick())
+                    {
+                        return;
+                    }
+
+                    session.AddWidget(payload, session.SelectedNodeId);
+                }}>
+                {Ui.Icon(Icons.Grip, "widget-grip")}
+                <span className="widget-icon">{Ui.Icon(icon)}</span>
+                <span className="widget-label">{Text(label)}</span>
+            </button>);
+    }
+
+    private static bool Matches(string query, params string[] fields)
+    {
+        if (query.Length == 0)
+        {
+            return true;
+        }
+
+        foreach (string field in fields)
+        {
+            if (field.Contains(query, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}

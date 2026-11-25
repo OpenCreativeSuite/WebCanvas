@@ -1,0 +1,101 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>The generated, static-friendly API surface.</summary>
+public sealed class DevApi : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        WcProject? project = session.Project;
+
+        if (project is null)
+        {
+            return <div className="dev-page">{Ui.Empty(Icons.Globe, "No APIs yet", "Open a project to see its generated API.")}</div>;
+        }
+
+        List<Node> rows = [];
+
+        foreach (DataSchema schema in project.Schemas)
+        {
+            rows.Add(
+                <div className="api-row">
+                    <span className="api-method">{Text("GET")}</span>
+                    <span className="api-path mono">{Text("/data/" + Ids.Slug(schema.Plural) + "/index.json")}</span>
+                    <span className="api-type">{Text(schema.Name)}</span>
+                    <span className="api-desc">{Text(project.CountOf(schema) + " records")}</span>
+                </div>);
+
+            rows.Add(
+                <div className="api-row">
+                    <span className="api-method">{Text("GET")}</span>
+                    <span className="api-path mono">{Text("/data/" + Ids.Slug(schema.Plural) + "/{id}.json")}</span>
+                    <span className="api-type">{Text(schema.Name)}</span>
+                    <span className="api-desc">{Text("One record")}</span>
+                </div>);
+        }
+
+        foreach (PageDoc page in project.Pages)
+        {
+            rows.Add(
+                <div className="api-row">
+                    <span className="api-method">{Text("GET")}</span>
+                    <span className="api-path mono">{Text("/" + (page.IsHome ? "" : page.Slug + "/"))}</span>
+                    <span className="api-type">{Text("Page")}</span>
+                    <span className="api-desc">{Text(page.Title)}</span>
+                </div>);
+        }
+
+        return (
+            <div className="dev-page">
+                <header className="dev-hero">
+                    <div className="dev-eyebrow">{Text("Development")}</div>
+                    <h1 className="dev-title">{Text("APIs")}</h1>
+                    <p className="dev-lead">
+                        {Text("Every page and record publishes as a static JSON endpoint. There is no server to run: the same files work on any static host.")}
+                    </p>
+                    <div className="inline-actions">
+                        {Ui.Button("Regenerate", session.RegenerateApis, "secondary", Icons.Refresh, small: true)}
+                        {Ui.Button("Open app/api", () => session.OpenFolder(project.ApiFolder), "ghost", Icons.FolderOpen, small: true)}
+                    </div>
+                </header>
+
+                <section className="dev-section">
+                    <div className="dev-section-head">
+                        <h2 className="dev-section-title">{Text("Endpoints")}</h2>
+                        <span className="dev-section-note">{Text(rows.Count + " routes")}</span>
+                    </div>
+                    <div className="api-table">
+                        <div className="api-head">
+                            <span className="api-method">{Text("Method")}</span>
+                            <span className="api-path">{Text("Path")}</span>
+                            <span className="api-type">{Text("Type")}</span>
+                            <span className="api-desc">{Text("Description")}</span>
+                        </div>
+                        {F(rows.ToArray())}
+                    </div>
+                </section>
+
+                <section className="dev-section">
+                    <div className="dev-section-head">
+                        <h2 className="dev-section-title">{Text("Generated definition")}</h2>
+                    </div>
+                    <div className="meta-grid">
+                        {Ui.Meta("Definition", "app/api/index.json")}
+                        {Ui.Meta("Record data", "data/{plural}/index.json")}
+                        {Ui.Meta("Search index", "search.json")}
+                        {Ui.Meta("Sitemap", "sitemap.xml")}
+                    </div>
+                    <div className="dev-note">
+                        {Ui.Icon(Icons.Info)}
+                        <span>{Text("The definition is regenerated when you build and can be read by editors, scripts or a plugin.")}</span>
+                    </div>
+                </section>
+            </div>
+        );
+    }
+}

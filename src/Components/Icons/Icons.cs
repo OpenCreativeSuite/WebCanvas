@@ -1,0 +1,143 @@
+namespace WebCanvasDotNet.Components;
+
+/// <summary>Font Awesome class names used throughout the interface.</summary>
+public static class Icons
+{
+    public const string File = "fa-file";
+    public const string Database = "fa-database";
+    public const string Bolt = "fa-bolt";
+    public const string Content = "fa-file";
+    public const string Design = "fa-shapes";
+    public const string Data = "fa-database";
+    public const string Automation = "fa-bolt";
+    public const string Development = "fa-code";
+
+    public const string Search = "fa-magnifying-glass";
+    public const string Command = "fa-keyboard";
+    public const string Plus = "fa-plus";
+    public const string Minus = "fa-minus";
+    public const string Close = "fa-xmark";
+    public const string Check = "fa-check";
+    public const string CheckDouble = "fa-check-double";
+    public const string ChevronDown = "fa-chevron-down";
+    public const string ChevronUp = "fa-chevron-up";
+    public const string ChevronRight = "fa-chevron-right";
+    public const string ChevronLeft = "fa-chevron-left";
+    public const string Ellipsis = "fa-ellipsis";
+    public const string Grip = "fa-grip-vertical";
+    public const string Up = "fa-arrow-up";
+    public const string Down = "fa-arrow-down";
+    public const string Back = "fa-arrow-left";
+    public const string Forward = "fa-arrow-right";
+    public const string External = "fa-up-right-from-square";
+    public const string Undo = "fa-rotate-left";
+    public const string Redo = "fa-rotate-right";
+    public const string Refresh = "fa-rotate";
+    public const string Folder = "fa-folder";
+    public const string FolderOpen = "fa-folder-open";
+    public const string FolderPlus = "fa-folder-plus";
+    public const string Save = "fa-floppy-disk";
+    public const string Copy = "fa-copy";
+    public const string Delete = "fa-trash-can";
+    public const string Edit = "fa-pen";
+    public const string Pencil = "fa-pencil";
+    public const string Download = "fa-download";
+    public const string Upload = "fa-upload";
+    public const string Publish = "fa-cloud-arrow-up";
+    public const string Export = "fa-file-export";
+    public const string AlignLeft = "fa-align-left";
+    public const string Heading = "fa-heading";
+    public const string Font = "fa-font";
+    public const string TextWidth = "fa-text-width";
+    public const string Hash = "fa-hashtag";
+    public const string Toggle = "fa-toggle-on";
+    public const string Calendar = "fa-calendar";
+    public const string Clock = "fa-clock";
+    public const string History = "fa-clock-rotate-left";
+    public const string List = "fa-list";
+    public const string ListCheck = "fa-list-check";
+    public const string Link = "fa-link";
+    public const string Image = "fa-image";
+    public const string Cube = "fa-cube";
+    public const string Layers = "fa-layer-group";
+    public const string Newspaper = "fa-newspaper";
+    public const string User = "fa-user";
+    public const string Users = "fa-users";
+    public const string Tag = "fa-tag";
+    public const string Quote = "fa-quote-left";
+    public const string Columns = "fa-table-columns";
+    public const string ArrowsUpDown = "fa-arrows-up-down";
+    public const string Square = "fa-square";
+    public const string Circle = "fa-circle";
+    public const string Star = "fa-star";
+    public const string Desktop = "fa-desktop";
+    public const string Tablet = "fa-tablet";
+    public const string Mobile = "fa-mobile";
+    public const string Eye = "fa-eye";
+    public const string EyeOff = "fa-eye-slash";
+    public const string Expand = "fa-expand";
+    public const string Collapse = "fa-compress";
+    public const string Center = "fa-crosshairs";
+    public const string Success = "fa-circle-check";
+    public const string Warning = "fa-triangle-exclamation";
+    public const string Error = "fa-circle-exclamation";
+    public const string Add = "fa-circle-plus";
+    public const string Remove = "fa-circle-minus";
+    public const string Spinner = "fa-spinner";
+    public const string Play = "fa-play";
+    public const string Rocket = "fa-rocket";
+    public const string Moon = "fa-moon";
+    public const string Sun = "fa-sun";
+    public const string Shield = "fa-shield-halved";
+    public const string Terminal = "fa-terminal";
+    public const string Plug = "fa-plug";
+    public const string Graph = "fa-diagram-project";
+    public const string Filter = "fa-filter";
+    public const string Inbox = "fa-inbox";
+    public const string Mail = "fa-envelope";
+    public const string Bell = "fa-bell";
+    public const string Send = "fa-paper-plane";
+    public const string Branch = "fa-code-branch";
+    public const string Book = "fa-book";
+    public const string Lock = "fa-lock";
+    public const string Unlock = "fa-lock-open";
+    public const string Info = "fa-circle-info";
+    public const string Help = "fa-circle-question";
+    public const string Palette = "fa-palette";
+    public const string Sliders = "fa-sliders";
+    public const string Settings = "fa-gear";
+    public const string Puzzle = "fa-puzzle-piece";
+    public const string Globe = "fa-globe";
+    public const string Sparkles = "fa-wand-magic-sparkles";
+    public const string Bars = "fa-bars";
+    public const string House = "fa-house";
+
+    public static string ForTag(string tag) => tag.ToLowerInvariant() switch
+    {
+        "h1" or "h2" or "h3" or "h4" or "h5" or "h6" => Heading,
+        "p" or "span" or "strong" or "em" => AlignLeft,
+        "a" => Link,
+        "button" => Forward,
+        "img" => Image,
+        "nav" => Bars,
+        "header" or "footer" or "section" or "article" or "aside" or "main" => Layers,
+        "blockquote" => Quote,
+        "collection" => Data,
+        "ul" or "ol" or "li" => List,
+        "div" => Square,
+        _ => Cube,
+    };
+
+    public static string ForField(string type) => type switch
+    {
+        "textarea" or "richtext" => AlignLeft,
+        "number" => Hash,
+        "boolean" => Toggle,
+        "date" => Calendar,
+        "select" => List,
+        "relation" => Link,
+        "image" => Image,
+        "url" => Globe,
+        _ => Font,
+    };
+}

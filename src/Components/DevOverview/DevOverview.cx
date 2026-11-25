@@ -1,0 +1,125 @@
+using System.Collections.Generic;
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>A calm project overview: state, counts and the next useful action.</summary>
+public sealed class DevOverview : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+        WcProject? project = session.Project;
+
+        if (project is null)
+        {
+            return <div className="dev-page">{Ui.Empty(Icons.Folder, "No project open", "Open or create a project to see its development overview.")}</div>;
+        }
+
+        List<Node> checks = [];
+
+        foreach ((string label, string detail, string state) in session.HealthChecks())
+        {
+            checks.Add(
+                <div className="health-row">
+                    <span className={"health-mark is-" + state} />
+                    <span className="health-label">{Text(label)}</span>
+                    <span className="health-detail">{Text(detail)}</span>
+                </div>);
+        }
+
+        return (
+            <div className="dev-page">
+                <header className="dev-hero">
+                    <div className="dev-eyebrow">{Text("Development")}</div>
+                    <h1 className="dev-title">{Text(project.Name)}</h1>
+                    <p className="dev-lead">
+                        {Text(project.Manifest.Description is { Length: > 0 } description ? description : "A WebCanvas project.")}
+                    </p>
+                    <div className="inline-actions">
+                        {Ui.Button("Design", () => session.OpenMode(StudioMode.Design), "primary", Icons.Design, small: true)}
+                        {Ui.Button("Add content", () => session.OpenMode(StudioMode.Content), "secondary", Icons.Content, small: true)}
+                        {Ui.Button("Build site", session.RunBuild, "secondary", Icons.Publish, small: true)}
+                        {Ui.Button("Blocks", () => session.OpenMode(StudioMode.Blocks), "ghost", Icons.Cube, small: true)}
+                    </div>
+                </header>
+
+                <section className="dev-section">
+                    <div className="dev-section-head">
+                        <h2 className="dev-section-title">{Text("Project health")}</h2>
+                        <span className="dev-section-note">{Text("A quick, honest summary.")}</span>
+                    </div>
+                    <div className="health-list">{F(checks.ToArray())}</div>
+                </section>
+
+                <section className="dev-section">
+                    <div className="dev-section-head">
+                        <h2 className="dev-section-title">{Text("Accessibility")}</h2>
+                        <span className="dev-section-note">{Text("Applies to this computer")}</span>
+                    </div>
+                    <div className="option-row">
+                        <div className="option-copy">
+                            <div className="option-title">{Text("Interface text size")}</div>
+                            <div className="option-desc">{Text("Increase the studio's text and controls. Useful on large or high-density displays.")}</div>
+                        </div>
+                        <div className="scale-options">
+                            <button className={session.Preferences.UiScale == 100 ? "scale-btn is-active" : "scale-btn"}
+                                onClick={() => session.SetUiScale(100)}>{Text("Default")}</button>
+                            <button className={session.Preferences.UiScale == 115 ? "scale-btn is-active" : "scale-btn"}
+                                onClick={() => session.SetUiScale(115)}>{Text("Comfortable")}</button>
+                            <button className={session.Preferences.UiScale == 130 ? "scale-btn is-active" : "scale-btn"}
+                                onClick={() => session.SetUiScale(130)}>{Text("Large")}</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="dev-section">
+                    <div className="dev-section-head">
+                        <h2 className="dev-section-title">{Text("Project")}</h2>
+                    </div>
+                    <div className="meta-grid">
+                        {Ui.Meta("Folder", project.Root)}
+                        {Ui.Meta("Template", project.Manifest.Template)}
+                        {Ui.Meta("Created", project.Manifest.Created.Length >= 10 ? project.Manifest.Created[..10] : project.Manifest.Created)}
+                        {Ui.Meta("Site URL", string.IsNullOrWhiteSpace(project.Manifest.BaseUrl) ? "Not set" : project.Manifest.BaseUrl)}
+                        {Ui.Meta("Data", project.Schemas.Count + " types · " + project.TotalEntities + " records")}
+                        {Ui.Meta("Plugins", project.Plugins.Count == 0 ? "None" : project.Plugins.Count.ToString())}
+                    </div>
+                </section>
+
+                {Show(project.Warnings.Count > 0,
+                    <section className="dev-section">
+                        <div className="dev-section-head">
+                            <h2 className="dev-section-title">{Text("Warnings")}</h2>
+                            <span className="dev-section-note">{Text(project.Warnings.Count.ToString())}</span>
+                        </div>
+                        <div className="notice-list">
+                            {Each(project.Warnings, warning =>
+                                <div className="notice-row">
+                                    {Ui.Icon(Icons.Warning)}
+                                    <span>{Text(warning)}</span>
+                                </div>)}
+                        </div>
+                    </section>)}
+
+                <section className="dev-section is-last">
+                    <div className="dev-section-head">
+                        <h2 className="dev-section-title">{Text("How this project is put together")}</h2>
+                    </div>
+                    <div className="folder-map">
+                        <div className="folder-row"><span className="mono">.wc</span><span>{Text("Project manifest and version")}</span></div>
+                        <div className="folder-row"><span className="mono">app/design/pages</span><span>{Text("Page trees as JSON")}</span></div>
+                        <div className="folder-row"><span className="mono">app/design/themes</span><span>{Text("Theme tokens and site CSS")}</span></div>
+                        <div className="folder-row"><span className="mono">app/data</span><span>{Text("Schemas and authoritative records")}</span></div>
+                        <div className="folder-row"><span className="mono">app/automation</span><span>{Text("Event handlers")}</span></div>
+                        <div className="folder-row"><span className="mono">app/code</span><span>{Text("Plugins, scripts and styles")}</span></div>
+                        <div className="folder-row"><span className="mono">app/api</span><span>{Text("Generated API definitions")}</span></div>
+                        <div className="folder-row"><span className="mono">build/site</span><span>{Text("Static output, ready to host")}</span></div>
+                    </div>
+                </section>
+            </div>
+        );
+    }
+}

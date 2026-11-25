@@ -1,0 +1,44 @@
+using Donkeh.UILab;
+using WebCanvasDotNet.Core;
+using static Donkeh.UILab._;
+
+namespace WebCanvasDotNet.Components;
+
+/// <summary>The development workspace: overview, theme, plugins, APIs and builds.</summary>
+public sealed class DevelopmentWorkspace : Component
+{
+    public override Node Render()
+    {
+        StudioSession session = UseContext(SessionContext.Value);
+
+        return (
+            <div className="workspace">
+                <div className="mode-bar">
+                    <div className="mode-bar-title">
+                        {Ui.Icon(Icons.Development)}
+                        <span>{Text("Development")}</span>
+                    </div>
+                    <div className="mode-bar-crumb">
+                        {Ui.Icon(Icons.ChevronRight)}
+                        <span>{Text(ModeInfo.DevLabel(session.DevSection))}</span>
+                    </div>
+                    <span className="flex-spacer" />
+                    <div className="mode-bar-actions">
+                        {Show(session.Project is not null, session.Project is null ? null :
+                            <button className="icon-btn" title="Open the project folder" onClick={() => session.OpenFolder(session.Project.Root)}>
+                                {Ui.Icon(Icons.FolderOpen)}
+                            </button>)}
+                    </div>
+                </div>
+
+                <div className="workspace-scroll">
+                    {Show(session.DevSection == DevSection.Overview, <DevOverview />)}
+                    {Show(session.DevSection == DevSection.Theme, <DevTheme />)}
+                    {Show(session.DevSection == DevSection.Plugins, <DevPlugins />)}
+                    {Show(session.DevSection == DevSection.Api, <DevApi />)}
+                    {Show(session.DevSection == DevSection.Build, <DevBuild />)}
+                </div>
+            </div>
+        );
+    }
+}
