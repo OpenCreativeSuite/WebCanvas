@@ -70,11 +70,11 @@ The workflow checks out `barely-sentient/donkeh-ui` into the sibling
 `UI Framework/CSS-Engine` path expected by `WebCanvasDotNet.csproj`, then runs the
 same commands in `.github/workflows/tests.yml`.
 
-Releases are folder builds, never `PublishSingleFile` executables.
-`.github/workflows/release.yml` resolves the newest `v*` tag on every push to
-`master`/`main`, builds that tag on all desktop targets, and creates or updates the
-matching GitHub release with the zip/tar archives. Pushing a tag directly uses that
-tag instead.
+Releases package the runtime-specific `dotnet build` output directly, never a
+`dotnet publish` single-file executable. `.github/workflows/release.yml` resolves
+the newest `v*` tag on every push to `master`/`main`, builds that tag on all desktop
+targets, uploads one artifact per OS, and creates or updates the matching GitHub
+release with those zip/tar archives. Pushing a tag directly uses that tag instead.
 
 ## What is in the application
 

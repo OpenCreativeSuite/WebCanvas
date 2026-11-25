@@ -110,39 +110,38 @@ jobs:
       - name: Transform CSX sources
         run: csx build --configuration Release
 
-      - name: Publish folder build
-        # Keep this as a normal folder publish. The app is shipped as a folder
-        # of assemblies and native dependencies, never as a single executable.
+      - name: Build runtime artifacts
+        # Package the runtime-specific build output directly. Never produce a
+        # single-file executable.
         run: >
-          dotnet publish WebCanvasDotNet.csproj
+          dotnet build WebCanvasDotNet.csproj
           --configuration Release
           --runtime ${{ matrix.rid }}
           --self-contained true
-          --output publish
-          -p:PublishSingleFile=false
-          -p:IncludeNativeLibrariesForSelfExtract=false
-          -p:PublishTrimmed=false
+          --output build-artifacts/${{ matrix.rid }}
           -p:DebugType=None
           -p:DebugSymbols=false
 
       - name: Verify folder output
         shell: pwsh
         run: |
-          if (-not (Test-Path "publish/WebCanvasDotNet.exe") -and -not (Test-Path "publish/WebCanvasDotNet")) {
-            throw "Expected a folder publish with the WebCanvas executable."
+          $output = "build-artifacts/${{ matrix.rid }}"
+
+          if (-not (Test-Path "$output/WebCanvasDotNet.exe") -and -not (Test-Path "$output/WebCanvasDotNet")) {
+            throw "Expected the runtime build output to contain WebCanvasDotNet."
           }
 
-          Get-ChildItem publish | Select-Object Name, Length
+          Get-ChildItem $output | Select-Object Name, Length
 
       - name: Package for Windows
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Compress-Archive -Path publish/* -DestinationPath "${{ matrix.archive }}" -Force
+        run: Compress-Archive -Path "build-artifacts/${{ matrix.rid }}/*" -DestinationPath "${{ matrix.archive }}" -Force
 
       - name: Package for Linux and macOS
         if: runner.os != 'Windows'
         shell: bash
-        run: tar -czf "${{ matrix.archive }}" -C publish .
+        run: tar -czf "${{ matrix.archive }}" -C "build-artifacts/${{ matrix.rid }}" .
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4

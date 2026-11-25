@@ -34,16 +34,20 @@ public sealed class WorkflowTests
     }
 
     [Fact]
-    public void ReleaseWorkflowPublishesTheNewestTagAsAFolderBuild()
+    public void ReleaseWorkflowPublishesTheNewestTagFromBuildArtifacts()
     {
         string text = File.ReadAllText(Path.Combine(Repository.Root(), ".github", "workflows", "release.yml"));
 
         Assert.Contains("branches:", text);
         Assert.Contains("master", text);
         Assert.Contains("git describe --tags --abbrev=0", text);
-        Assert.Contains("PublishSingleFile=false", text);
+        Assert.Contains("dotnet build WebCanvasDotNet.csproj", text);
+        Assert.Contains("--self-contained true", text);
+        Assert.Contains("build-artifacts/${{ matrix.rid }}", text);
+        Assert.Contains("actions/upload-artifact@v4", text);
         Assert.Contains("make_latest: true", text);
         Assert.Contains("overwrite_files: true", text);
+        Assert.DoesNotContain("dotnet publish", text);
         Assert.DoesNotContain("PublishSingleFile=true", text);
     }
 
