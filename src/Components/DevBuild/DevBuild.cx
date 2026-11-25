@@ -126,12 +126,13 @@ public sealed class DevBuild : Component
                 </div>
 
                 {Show(result is not null && result.Warnings.Count > 0,
+                    result is null ? null :
                     <section className="dev-section is-last">
                         <div className="dev-section-head">
                             <h2 className="dev-section-title">{Text("Warnings")}</h2>
                         </div>
                         <div className="notice-list">
-                            {Each(result!.Warnings, warning =>
+                            {Each(result.Warnings, warning =>
                                 <div className="notice-row">
                                     {Ui.Icon(Icons.Warning)}
                                     <span>{Text(warning)}</span>

@@ -18,6 +18,12 @@
        donkeh enable-target android
        donkeh enable-target web -->
 
+  <ItemGroup>
+    <Compile Remove="tests/**/*.cs" />
+    <None Remove="tests/**/*" />
+    <EmbeddedResource Remove="tests/**/*" />
+  </ItemGroup>
+
   <!-- Every [assembly: Stylesheet(...)] path must also be embedded here:
        the attribute is metadata only, the loader reads the embedded copy. -->
   <ItemGroup>

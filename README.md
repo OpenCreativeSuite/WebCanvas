@@ -50,6 +50,26 @@ dotnet run -- --screenshot <path>          # host captures frame 120 and exits
 Without `--project`, `--create` or `--resume`, the application opens on the
 project hub with recent projects, Create and Open folder.
 
+## Tests
+
+The test project lives in `tests/WebCanvasDotNet.Tests` and uses Donkeh's headless
+component harness:
+
+```powershell
+csx build
+dotnet test tests/WebCanvasDotNet.Tests/WebCanvasDotNet.Tests.csproj
+```
+
+- `tests/.../Components` has one test class per visual component.
+- `tests/.../Core` covers project persistence, slug helpers, static generation,
+  entity routes, editing/undo and the local preview server.
+- `tests/.../Structure` enforces the component folder convention and checks the
+  GitHub workflows.
+
+The workflow checks out `barely-sentient/donkeh-ui` into the sibling
+`UI Framework/CSS-Engine` path expected by `WebCanvasDotNet.csproj`, then runs the
+same commands in `.github/workflows/tests.yml`.
+
 ## What is in the application
 
 The mode rail opens VS Code-style tabs. Tabs remember the area and item they point

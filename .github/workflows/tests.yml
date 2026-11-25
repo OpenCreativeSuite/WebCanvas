@@ -1,4 +1,4 @@
-name: Unit tests
+﻿name: Unit tests
 
 on:
   push:
@@ -10,12 +10,19 @@ permissions:
 
 jobs:
   test:
-    name: PixelDotNet.Tests
+    name: WebCanvasDotNet.Tests
     runs-on: windows-latest
 
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
+
+      - name: Check out Donkeh UI
+        shell: pwsh
+        run: |
+          $target = [System.IO.Path]::GetFullPath((Join-Path $env:GITHUB_WORKSPACE "../../UI Framework/CSS-Engine"))
+          New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
+          git clone --depth 1 https://github.com/barely-sentient/donkeh-ui.git $target
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
@@ -29,11 +36,12 @@ jobs:
         run: csx build --configuration Release
 
       - name: Restore
-        run: dotnet restore tests/PixelDotNet.Tests/PixelDotNet.Tests.csproj
+        run: dotnet restore tests/WebCanvasDotNet.Tests/WebCanvasDotNet.Tests.csproj
 
       - name: Test
         run: >
-          dotnet test tests/PixelDotNet.Tests/PixelDotNet.Tests.csproj
+          dotnet test tests/WebCanvasDotNet.Tests/WebCanvasDotNet.Tests.csproj
           --no-restore
           --configuration Release
           --logger "console;verbosity=normal"
+

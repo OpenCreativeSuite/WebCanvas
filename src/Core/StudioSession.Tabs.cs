@@ -38,6 +38,7 @@ public sealed partial class StudioSession
 
     public void OpenMode(StudioMode mode)
     {
+        ShowModeMenu = false;
         var (itemId, title, icon) = mode switch
         {
             StudioMode.Content => ContentMapOpen

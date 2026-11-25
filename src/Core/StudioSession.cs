@@ -212,9 +212,9 @@ public sealed partial class StudioSession
     private readonly string _preferencesPath;
     private bool _initialised;
 
-    public StudioSession()
+    public StudioSession(string? stateFolder = null)
     {
-        var folder = System.IO.Path.Combine(
+        var folder = stateFolder ?? System.IO.Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "WebCanvasDotNet");
         Directory.CreateDirectory(folder);

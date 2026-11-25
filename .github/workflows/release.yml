@@ -1,4 +1,4 @@
-name: Build and release PixelDotNet
+﻿name: Build and release WebCanvas
 
 on:
   push:
@@ -25,30 +25,37 @@ jobs:
           - name: Windows x64
             os: windows-latest
             rid: win-x64
-            artifact: PixelDotNet-win-x64
-            archive: PixelDotNet-win-x64.zip
+            artifact: WebCanvas-win-x64
+            archive: WebCanvas-win-x64.zip
 
           - name: Linux x64
             os: ubuntu-latest
             rid: linux-x64
-            artifact: PixelDotNet-linux-x64
-            archive: PixelDotNet-linux-x64.tar.gz
+            artifact: WebCanvas-linux-x64
+            archive: WebCanvas-linux-x64.tar.gz
 
           - name: macOS Apple Silicon
             os: macos-latest
             rid: osx-arm64
-            artifact: PixelDotNet-macos-arm64
-            archive: PixelDotNet-macos-arm64.tar.gz
+            artifact: WebCanvas-macos-arm64
+            archive: WebCanvas-macos-arm64.tar.gz
 
           - name: macOS Intel
             os: macos-latest
             rid: osx-x64
-            artifact: PixelDotNet-macos-x64
-            archive: PixelDotNet-macos-x64.tar.gz
+            artifact: WebCanvas-macos-x64
+            archive: WebCanvas-macos-x64.tar.gz
 
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
+
+      - name: Check out Donkeh UI
+        shell: pwsh
+        run: |
+          $target = [System.IO.Path]::GetFullPath((Join-Path $env:GITHUB_WORKSPACE "../../UI Framework/CSS-Engine"))
+          New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
+          git clone --depth 1 https://github.com/barely-sentient/donkeh-ui.git $target
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
@@ -68,7 +75,7 @@ jobs:
         # searches). Publishing a normal folder keeps the native dll next to the
         # executable, which is what makes GlfwPlatform applicable.
         run: >
-          dotnet publish PixelDotNet.csproj
+          dotnet publish WebCanvasDotNet.csproj
           --configuration Release
           --runtime ${{ matrix.rid }}
           --self-contained true
@@ -117,9 +124,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.tag || github.ref_name }}
-          name: PixelDotNet ${{ inputs.tag || github.ref_name }}
+          name: WebCanvas ${{ inputs.tag || github.ref_name }}
           files: dist/*
           generate_release_notes: true
           draft: false
           prerelease: false
           make_latest: true
+
