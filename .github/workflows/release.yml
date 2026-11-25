@@ -4,19 +4,58 @@ on:
   push:
     tags:
       - "v*"
+    branches:
+      - master
+      - main
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag, for example v1.0.0"
-        required: true
+        description: "Release tag, for example v1.0.0 (blank uses the newest tag)"
+        required: false
         type: string
 
 permissions:
   contents: read
 
 jobs:
+  resolve:
+    name: Resolve release tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve the tag to build
+        id: tag
+        shell: bash
+        run: |
+          tag=""
+
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            tag="$GITHUB_REF_NAME"
+          elif [[ -n "${{ inputs.tag }}" ]]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          fi
+
+          if [[ -z "$tag" ]]; then
+            echo "No release tag found. Push a v* tag or supply one manually."
+          else
+            echo "Building release $tag"
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
   build:
     name: Build ${{ matrix.name }}
+    needs: resolve
+    if: needs.resolve.outputs.tag != ''
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -47,8 +86,11 @@ jobs:
             archive: WebCanvas-macos-x64.tar.gz
 
     steps:
-      - name: Check out the repository
+      - name: Check out the release tag
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.tag }}
+          fetch-depth: 0
 
       - name: Check out Donkeh UI
         shell: pwsh
@@ -68,12 +110,9 @@ jobs:
       - name: Transform CSX sources
         run: csx build --configuration Release
 
-      - name: Publish
-        # Silk.NET's native loader resolves glfw3.dll from the app base directory
-        # and Assembly.Location, both of which break under PublishSingleFile
-        # (the native lib is extracted to a temp folder that Silk.NET never
-        # searches). Publishing a normal folder keeps the native dll next to the
-        # executable, which is what makes GlfwPlatform applicable.
+      - name: Publish folder build
+        # Keep this as a normal folder publish. The app is shipped as a folder
+        # of assemblies and native dependencies, never as a single executable.
         run: >
           dotnet publish WebCanvasDotNet.csproj
           --configuration Release
@@ -85,6 +124,15 @@ jobs:
           -p:PublishTrimmed=false
           -p:DebugType=None
           -p:DebugSymbols=false
+
+      - name: Verify folder output
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "publish/WebCanvasDotNet.exe") -and -not (Test-Path "publish/WebCanvasDotNet")) {
+            throw "Expected a folder publish with the WebCanvas executable."
+          }
+
+          Get-ChildItem publish | Select-Object Name, Length
 
       - name: Package for Windows
         if: runner.os == 'Windows'
@@ -104,9 +152,10 @@ jobs:
           if-no-files-found: error
 
   release:
-    name: Create GitHub release
+    name: Publish latest release
+    needs: [resolve, build]
+    if: needs.resolve.outputs.tag != ''
     runs-on: ubuntu-latest
-    needs: build
     permissions:
       contents: write
 
@@ -120,14 +169,14 @@ jobs:
       - name: List release files
         run: ls -lh dist
 
-      - name: Create release
+      - name: Create or update the release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag || github.ref_name }}
-          name: WebCanvas ${{ inputs.tag || github.ref_name }}
+          tag_name: ${{ needs.resolve.outputs.tag }}
+          name: WebCanvas ${{ needs.resolve.outputs.tag }}
           files: dist/*
+          overwrite_files: true
           generate_release_notes: true
           draft: false
           prerelease: false
           make_latest: true
-

@@ -33,6 +33,20 @@ public sealed class WorkflowTests
         Assert.Contains("UI Framework", text);
     }
 
+    [Fact]
+    public void ReleaseWorkflowPublishesTheNewestTagAsAFolderBuild()
+    {
+        string text = File.ReadAllText(Path.Combine(Repository.Root(), ".github", "workflows", "release.yml"));
+
+        Assert.Contains("branches:", text);
+        Assert.Contains("master", text);
+        Assert.Contains("git describe --tags --abbrev=0", text);
+        Assert.Contains("PublishSingleFile=false", text);
+        Assert.Contains("make_latest: true", text);
+        Assert.Contains("overwrite_files: true", text);
+        Assert.DoesNotContain("PublishSingleFile=true", text);
+    }
+
     private static IEnumerable<string> WorkflowFiles() =>
         Directory.GetFiles(Path.Combine(Repository.Root(), ".github", "workflows"), "*.yml");
 }

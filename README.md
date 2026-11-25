@@ -70,6 +70,12 @@ The workflow checks out `barely-sentient/donkeh-ui` into the sibling
 `UI Framework/CSS-Engine` path expected by `WebCanvasDotNet.csproj`, then runs the
 same commands in `.github/workflows/tests.yml`.
 
+Releases are folder builds, never `PublishSingleFile` executables.
+`.github/workflows/release.yml` resolves the newest `v*` tag on every push to
+`master`/`main`, builds that tag on all desktop targets, and creates or updates the
+matching GitHub release with the zip/tar archives. Pushing a tag directly uses that
+tag instead.
+
 ## What is in the application
 
 The mode rail opens VS Code-style tabs. Tabs remember the area and item they point
